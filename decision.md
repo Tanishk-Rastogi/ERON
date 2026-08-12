@@ -112,6 +112,13 @@
   4. Stage, commit, and push complete project code and documentation artifacts.
 - **Reasoning**: Ensures all code, server logic, client components, and decision documentation are committed and synchronized to the user's official GitHub repository.
 
+## Decision 12: Web Design Guidelines Skill Integration
+- **Date**: 2026-08-13
+- **Context**: The user requested installing the `web-design-guidelines` skill from `https://github.com/vercel-labs/agent-skills`.
+- **Decision**: Executed `npx skills add https://github.com/vercel-labs/agent-skills --skill web-design-guidelines` to install the skill into `.agents/skills/web-design-guidelines`.
+- **Reasoning**: Equips the workspace with comprehensive Vercel Web Interface Guidelines for auditing accessibility, contrast, typography, and responsive UX.
+
+
 
 
 
