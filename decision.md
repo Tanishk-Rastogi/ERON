@@ -118,6 +118,19 @@
 - **Decision**: Executed `npx skills add https://github.com/vercel-labs/agent-skills --skill web-design-guidelines` to install the skill into `.agents/skills/web-design-guidelines`.
 - **Reasoning**: Equips the workspace with comprehensive Vercel Web Interface Guidelines for auditing accessibility, contrast, typography, and responsive UX.
 
+## Decision 13: Web Interface Guidelines Compliance & UI Quality Audit
+- **Date**: 2026-08-13
+- **Context**: The user requested applying and fixing all web design issues based on the installed Vercel `web-design-guidelines` ("i want you to apply and fix the change in the webite").
+- **Decision**: 
+  1. Add explicit `aria-label` attributes to all icon buttons and interactive controls across `Header`, `MainDashboard`, `CriticalFind`, `ReceivingTab`, and `CapacityPanel`.
+  2. Add `aria-hidden="true"` to decorative Lucide icons.
+  3. Apply `tabular-nums` (`font-mono tabular-nums`) for all numbers, bed counts, match percentages, ETAs, and timestamps to eliminate layout shift during updates.
+  4. Ensure all flex containers specify `min-w-0` to allow proper text truncation and prevent horizontal overflow.
+  5. Standardize ellipsis typography from straight `...` to proper single-character `…`.
+  6. Add visible `:focus-visible` focus rings (`focus-visible:ring-2 focus-visible:ring-[#292524]`) across interactive elements.
+- **Reasoning**: Ensures full compliance with Vercel Web Interface Guidelines for accessibility, focus states, typography, and responsive layout stability.
+
+
 
 
 

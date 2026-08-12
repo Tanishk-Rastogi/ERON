@@ -2,13 +2,7 @@ import React, { useState } from 'react';
 import { useWebSocket } from '../context/WebSocketContext';
 import { 
   Building2, 
-  ShieldCheck, 
   Clock, 
-  Navigation, 
-  AlertCircle, 
-  FileText, 
-  Activity, 
-  Ambulance, 
   CheckCircle2, 
   ArrowRight,
   Unlock
@@ -60,13 +54,13 @@ export function ReceivingTab({ onNavigateToCapacity }) {
       {/* Banner */}
       <div className="eleven-card p-8 bg-gradient-to-r from-white via-[#fafafa] to-[#f5f5f5]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#292524] text-white flex items-center justify-center">
-              <Building2 className="w-5 h-5" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-[#292524] text-white flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-5 h-5" aria-hidden="true" />
             </div>
-            <div>
-              <h1 className="text-2xl font-light text-[#0c0a09]">Receiving Tab (Incoming Transfers)</h1>
-              <p className="text-xs text-[#777169] font-light">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-light text-[#0c0a09] truncate">Receiving Tab (Incoming Transfers)</h1>
+              <p className="text-xs text-[#777169] font-light truncate">
                 Live notification feed for receiving admission desks and trauma teams.
               </p>
             </div>
@@ -74,10 +68,11 @@ export function ReceivingTab({ onNavigateToCapacity }) {
 
           <button
             onClick={onNavigateToCapacity}
-            className="eleven-button eleven-button-secondary text-xs"
+            aria-label="Navigate to Capacity Panel"
+            className="eleven-button eleven-button-secondary text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524] flex-shrink-0"
           >
             <span>Update Capacity Panel</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#777169]" />
+            <ArrowRight className="w-3.5 h-3.5 text-[#777169]" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -85,12 +80,12 @@ export function ReceivingTab({ onNavigateToCapacity }) {
       {/* Cards */}
       <div className="space-y-4">
         <h2 className="text-xs font-bold text-[#777169] uppercase tracking-widest font-mono">
-          INCOMING PATIENT PIPELINE ({incomingReferrals.length})
+          INCOMING PATIENT PIPELINE (<span className="tabular-nums">{incomingReferrals.length}</span>)
         </h2>
 
         {incomingReferrals.length === 0 ? (
           <div className="eleven-card p-12 text-center text-xs text-[#777169] space-y-2">
-            <CheckCircle2 className="w-10 h-10 text-[#16a34a] mx-auto" />
+            <CheckCircle2 className="w-10 h-10 text-[#16a34a] mx-auto" aria-hidden="true" />
             <h3 className="font-semibold text-[#0c0a09]">No Incoming Referrals</h3>
             <p>Your hospital has no active incoming patient transfers right now.</p>
           </div>
@@ -102,36 +97,38 @@ export function ReceivingTab({ onNavigateToCapacity }) {
                 className="eleven-card p-6 space-y-4 bg-white hover:border-[#292524]"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-bold text-[#0c0a09]">#{ref.patientRefCode}</span>
+                  <div className="flex items-center gap-2 font-mono tabular-nums">
+                    <span className="text-sm font-bold text-[#0c0a09]">#{ref.patientRefCode}</span>
                     <span className="eleven-badge bg-[#a7e5d3]/30 text-[#0c0a09] border-[#a7e5d3]">
                       {ref.status}
                     </span>
                   </div>
 
-                  <span className="text-xs font-bold text-[#d97706] flex items-center gap-1 font-mono">
-                    <Clock className="w-3.5 h-3.5" /> ETA: 8-12M
+                  <span className="text-xs font-bold text-[#d97706] flex items-center gap-1 font-mono tabular-nums">
+                    <Clock className="w-3.5 h-3.5" aria-hidden="true" /> ETA: 8-12m
                   </span>
                 </div>
 
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-[#292524]">{ref.requirementSummary}</h3>
-                  <p className="text-xs text-[#777169]">Referring Hospital: <strong className="text-[#0c0a09]">{ref.originHospitalName}</strong></p>
+                <div className="space-y-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-[#292524] truncate">{ref.requirementSummary}</h3>
+                  <p className="text-xs text-[#777169] truncate">Referring Hospital: <strong className="text-[#0c0a09]">{ref.originHospitalName}</strong></p>
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t border-[#f0efed] text-xs">
                   <button
                     onClick={() => handleSelectReferral(ref)}
-                    className="eleven-button eleven-button-secondary py-1.5 px-3 text-xs"
+                    aria-label={`Decrypt handoff packet for referral #${ref.patientRefCode}`}
+                    className="eleven-button eleven-button-secondary py-1.5 px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
                   >
-                    <Unlock className="w-3.5 h-3.5 text-[#16a34a]" />
+                    <Unlock className="w-3.5 h-3.5 text-[#16a34a]" aria-hidden="true" />
                     <span>Decrypt Packet</span>
                   </button>
 
                   {ref.status !== 'COMPLETED' && (
                     <button
                       onClick={() => handleCompleteHandover(ref.id)}
-                      className="eleven-button eleven-button-primary py-1.5 px-3 text-xs"
+                      aria-label={`Complete clinical handover for referral #${ref.patientRefCode}`}
+                      className="eleven-button eleven-button-primary py-1.5 px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
                     >
                       Complete Handover
                     </button>
@@ -145,30 +142,36 @@ export function ReceivingTab({ onNavigateToCapacity }) {
 
       {/* Packet Modal */}
       {selectedReferral && (
-        <div className="fixed inset-0 z-50 bg-[#0c0a09]/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div 
+          className="fixed inset-0 z-50 bg-[#0c0a09]/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="packet-modal-title"
+        >
           <div className="eleven-card w-full max-w-3xl p-8 space-y-5 bg-white border-[#d6d3d1] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#e7e5e4] pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-light text-[#0c0a09]">Digital Clinical Handoff Packet</h3>
+                  <h3 id="packet-modal-title" className="text-base font-light text-[#0c0a09]">Digital Clinical Handoff Packet</h3>
                   <span className="eleven-badge bg-[#a7e5d3]/40 text-[#0c0a09] border-[#a7e5d3]">
                     AES-256 Decrypted
                   </span>
                 </div>
-                <p className="text-xs text-[#777169]">Referral #{selectedReferral.patientRefCode}</p>
+                <p className="text-xs text-[#777169] font-mono tabular-nums">Referral #{selectedReferral.patientRefCode}</p>
               </div>
 
               <button
                 onClick={() => setSelectedReferral(null)}
-                className="eleven-button eleven-button-secondary py-1 px-3 text-xs"
+                aria-label="Close packet modal"
+                className="eleven-button eleven-button-secondary py-1 px-3 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
               >
                 ✕ Close
               </button>
             </div>
 
             {loadingPacket ? (
-              <div className="p-8 text-center text-xs text-[#777169]">
-                Decrypting packet payload...
+              <div className="p-8 text-center text-xs text-[#777169]" role="status" aria-live="polite">
+                Decrypting packet payload…
               </div>
             ) : packetData ? (
               <div className="space-y-4 text-xs">
@@ -191,7 +194,7 @@ export function ReceivingTab({ onNavigateToCapacity }) {
                   <h4 className="font-bold text-[#0c0a09]">Clinical Summary & Vitals</h4>
                   <p className="text-[#292524]">{packetData.clinicalSummary}</p>
                   {packetData.vitals && (
-                    <div className="flex flex-wrap gap-2 pt-2 text-[11px] font-mono">
+                    <div className="flex flex-wrap gap-2 pt-2 text-[11px] font-mono tabular-nums">
                       <span className="bg-white border border-[#e7e5e4] px-2.5 py-1 rounded-full text-[#292524]">BP: {packetData.vitals.bp}</span>
                       <span className="bg-white border border-[#e7e5e4] px-2.5 py-1 rounded-full text-[#292524]">HR: {packetData.vitals.hr}</span>
                       <span className="bg-white border border-[#e7e5e4] px-2.5 py-1 rounded-full text-[#292524]">SpO2: {packetData.vitals.spo2}%</span>

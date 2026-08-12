@@ -20,21 +20,21 @@ export function Header({ activeTab, setActiveTab }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 border-b border-[#f0efed]">
           {/* Brand Logo & Name */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <LogoIcon className="w-9 h-9" />
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-xl tracking-tight text-[#0c0a09]">
+                <span className="font-extrabold text-xl tracking-tight text-[#0c0a09] truncate">
                   ERON
                 </span>
               </div>
-              <p className="text-[11px] text-[#777169] font-light">Emergency Referral Orchestration Network</p>
+              <p className="text-[11px] text-[#777169] font-light truncate">Emergency Referral Orchestration Network</p>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex space-x-2 overflow-x-auto py-2 scrollbar-none">
+        <nav className="flex space-x-2 overflow-x-auto py-2 scrollbar-none" aria-label="Main navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -42,13 +42,15 @@ export function Header({ activeTab, setActiveTab }) {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap border ${
+                aria-label={`Navigate to ${item.label}`}
+                aria-current={isActive ? 'page' : undefined}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524] ${
                   isActive
                     ? 'bg-[#292524] text-white border-[#292524] shadow-sm'
                     : 'bg-transparent text-[#777169] border-transparent hover:text-[#0c0a09] hover:bg-[#f0efed]'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#777169]'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#777169]'}`} aria-hidden="true" />
                 <span>{item.label}</span>
                 {item.badge && (
                   <span className="text-[9px] uppercase font-bold bg-[#c8b8e0]/40 text-[#0c0a09] px-1.5 py-0.2 rounded-full border border-[#c8b8e0]">

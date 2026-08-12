@@ -2,22 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useWebSocket } from '../context/WebSocketContext';
 import { 
   Compass, 
-  Search, 
-  MapPin, 
-  CheckCircle2, 
-  Sparkles, 
   Clock, 
-  Building2, 
   ShieldAlert, 
   Send,
   SlidersHorizontal,
-  ChevronRight,
-  User,
-  Activity
+  ChevronRight
 } from 'lucide-react';
 
 export function CriticalFind({ onReferralCreated }) {
-  const { isConnected, refreshAll } = useWebSocket();
+  const { refreshAll } = useWebSocket();
   const [selectedCapabilities, setSelectedCapabilities] = useState(['NEUROSURGERY', 'CT_SCAN']);
   const [selectedResources, setSelectedResources] = useState(['ICU_BED', 'VENTILATOR']);
   const [priority, setPriority] = useState('CRITICAL');
@@ -132,8 +125,8 @@ export function CriticalFind({ onReferralCreated }) {
       {/* Header Card */}
       <div className="eleven-card p-8 bg-gradient-to-r from-white via-[#fafafa] to-[#f5f5f5]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#292524] text-white flex items-center justify-center">
-            <Compass className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-full bg-[#292524] text-white flex items-center justify-center flex-shrink-0">
+            <Compass className="w-5 h-5" aria-hidden="true" />
           </div>
           <div>
             <h1 className="text-2xl font-light text-[#0c0a09]">Critical Find (Fast Match)</h1>
@@ -148,7 +141,7 @@ export function CriticalFind({ onReferralCreated }) {
         {/* Requirement Sidebar */}
         <div className="eleven-card p-6 space-y-5 lg:col-span-1 bg-white">
           <h2 className="text-xs font-bold uppercase tracking-widest text-[#777169] font-mono flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-[#292524]" />
+            <SlidersHorizontal className="w-4 h-4 text-[#292524]" aria-hidden="true" />
             <span>Select Requirements</span>
           </h2>
 
@@ -159,7 +152,9 @@ export function CriticalFind({ onReferralCreated }) {
                 <button
                   key={p}
                   onClick={() => setPriority(p)}
-                  className={`py-2 px-2 text-xs font-semibold rounded-full transition-all border ${
+                  aria-label={`Set priority tier to ${p}`}
+                  aria-pressed={priority === p}
+                  className={`py-2 px-2 text-xs font-semibold rounded-full transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524] ${
                     priority === p 
                       ? p === 'CRITICAL' ? 'bg-[#dc2626] text-white border-[#dc2626]' : 'bg-[#d97706] text-white border-[#d97706]'
                       : 'bg-white text-[#777169] border-[#e7e5e4] hover:bg-[#f0efed]'
@@ -180,7 +175,9 @@ export function CriticalFind({ onReferralCreated }) {
                   <button
                     key={c.id}
                     onClick={() => toggleCapability(c.id)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                    aria-label={`Toggle capability ${c.label}`}
+                    aria-pressed={active}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524] ${
                       active
                         ? 'bg-[#292524] text-white border-[#292524]'
                         : 'bg-white text-[#777169] border-[#e7e5e4] hover:bg-[#f0efed]'
@@ -202,7 +199,9 @@ export function CriticalFind({ onReferralCreated }) {
                   <button
                     key={r.id}
                     onClick={() => toggleResource(r.id)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                    aria-label={`Toggle resource ${r.label}`}
+                    aria-pressed={active}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524] ${
                       active
                         ? 'bg-[#a7e5d3]/40 text-[#0c0a09] border-[#a7e5d3] font-bold'
                         : 'bg-white text-[#777169] border-[#e7e5e4] hover:bg-[#f0efed]'
@@ -216,12 +215,16 @@ export function CriticalFind({ onReferralCreated }) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-[#4e4e4e]">Clinical Case Summary:</label>
+            <label htmlFor="patient-summary" className="text-xs font-semibold text-[#4e4e4e]">Clinical Case Summary:</label>
             <textarea
+              id="patient-summary"
+              name="patientSummary"
               value={patientSummary}
               onChange={(e) => setPatientSummary(e.target.value)}
               rows={3}
-              className="w-full bg-[#fafafa] border border-[#e7e5e4] rounded-2xl p-3 text-xs text-[#292524] focus:outline-none focus:border-[#292524] focus:bg-white"
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full bg-[#fafafa] border border-[#e7e5e4] rounded-2xl p-3 text-xs text-[#292524] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524] focus:bg-white"
             />
           </div>
         </div>
@@ -230,7 +233,7 @@ export function CriticalFind({ onReferralCreated }) {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-[#777169] uppercase tracking-widest font-mono">
-              Ranked Candidate Hospitals ({matches.length})
+              Ranked Candidate Hospitals (<span className="tabular-nums">{matches.length}</span>)
             </h2>
             <span className="text-xs text-[#777169]">
               Sorted by: <strong className="text-[#0c0a09]">Telemetry Score</strong>
@@ -238,12 +241,12 @@ export function CriticalFind({ onReferralCreated }) {
           </div>
 
           {loading ? (
-            <div className="eleven-card p-12 text-center text-xs text-[#777169]">
-              Calculating candidate scores...
+            <div className="eleven-card p-12 text-center text-xs text-[#777169]" role="status" aria-live="polite">
+              Calculating candidate scores…
             </div>
           ) : matches.length === 0 ? (
             <div className="eleven-card p-12 text-center text-xs text-[#777169] space-y-2">
-              <ShieldAlert className="w-10 h-10 text-[#dc2626] mx-auto" />
+              <ShieldAlert className="w-10 h-10 text-[#dc2626] mx-auto" aria-hidden="true" />
               <h3 className="font-semibold text-[#0c0a09]">No Candidate Matches</h3>
               <p className="max-w-md mx-auto">
                 No active hospital currently satisfies all selected clinical requirements with available capacity.
@@ -257,44 +260,44 @@ export function CriticalFind({ onReferralCreated }) {
                   className="eleven-card p-6 space-y-3 bg-white hover:border-[#292524]"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full font-mono font-bold text-xs flex items-center justify-center border ${
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-8 h-8 rounded-full font-mono tabular-nums font-bold text-xs flex items-center justify-center border flex-shrink-0 ${
                         idx === 0 ? 'bg-[#a7e5d3]/40 text-[#0c0a09] border-[#a7e5d3]' : 'bg-[#f5f5f5] text-[#777169] border-[#e7e5e4]'
                       }`}>
                         #{idx + 1}
                       </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-[#0c0a09] flex items-center gap-2">
-                          <span>{cand.hospitalName}</span>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-[#0c0a09] flex items-center gap-2 truncate">
+                          <span className="truncate">{cand.hospitalName}</span>
                           {idx === 0 && (
-                            <span className="eleven-badge bg-[#a7e5d3]/40 text-[#0c0a09] border-[#a7e5d3]">
+                            <span className="eleven-badge bg-[#a7e5d3]/40 text-[#0c0a09] border-[#a7e5d3] flex-shrink-0">
                               TOP MATCH
                             </span>
                           )}
                         </h3>
-                        <p className="text-xs text-[#777169] font-light">{cand.address}</p>
+                        <p className="text-xs text-[#777169] font-light truncate">{cand.address}</p>
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-[#0c0a09] font-mono">
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-lg font-bold text-[#0c0a09] font-mono tabular-nums">
                         {(cand.score * 100).toFixed(0)}% <span className="text-xs font-normal text-[#777169]">match score</span>
                       </div>
-                      <span className="text-xs text-[#16a34a] font-semibold flex items-center justify-end gap-1">
-                        <Clock className="w-3.5 h-3.5 text-[#16a34a]" /> ETA: {cand.etaMinutes} mins ({cand.distanceKm} km)
+                      <span className="text-xs text-[#16a34a] font-semibold flex items-center justify-end gap-1 font-mono tabular-nums">
+                        <Clock className="w-3.5 h-3.5 text-[#16a34a]" aria-hidden="true" /> ETA: {cand.etaMinutes} mins ({cand.distanceKm} km)
                       </span>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between pt-3 border-t border-[#f0efed] gap-2 text-xs">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 font-mono tabular-nums">
                       {cand.availableResources.map((res, rIdx) => (
                         <span key={rIdx} className="eleven-pill bg-[#f5f5f5] text-[#292524]">
                           {res.type}: <strong className="text-[#16a34a]">{res.available} free</strong> / {res.total}
                         </span>
                       ))}
                       {cand.hasSpecialistOnCall && (
-                        <span className="eleven-pill bg-[#a8c8e8]/30 text-[#0c0a09] border-[#a8c8e8]">
+                        <span className="eleven-pill bg-[#a8c8e8]/30 text-[#0c0a09] border-[#a8c8e8] font-sans">
                           ✓ Specialist On-Call
                         </span>
                       )}
@@ -302,10 +305,11 @@ export function CriticalFind({ onReferralCreated }) {
 
                     <button
                       onClick={() => setSelectedCandidate(cand)}
-                      className="eleven-button eleven-button-primary text-xs py-1.5 px-4"
+                      aria-label={`Select hospital ${cand.hospitalName} for referral`}
+                      className="eleven-button eleven-button-primary text-xs py-1.5 px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
                     >
                       <span>Select Hospital</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4 h-4" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -317,16 +321,22 @@ export function CriticalFind({ onReferralCreated }) {
 
       {/* Confirmation Modal */}
       {selectedCandidate && (
-        <div className="fixed inset-0 z-50 bg-[#0c0a09]/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 z-50 bg-[#0c0a09]/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-modal-title"
+        >
           <div className="eleven-card w-full max-w-xl p-6 space-y-5 bg-white border-[#d6d3d1]">
             <div className="flex items-center justify-between border-b border-[#e7e5e4] pb-3">
               <div>
-                <h3 className="text-base font-bold text-[#0c0a09]">Confirm Referral Request</h3>
+                <h3 id="confirm-modal-title" className="text-base font-bold text-[#0c0a09]">Confirm Referral Request</h3>
                 <p className="text-xs text-[#777169]">Places soft-hold on bed unit & notifies receiving hospital desk.</p>
               </div>
               <button
                 onClick={() => setSelectedCandidate(null)}
-                className="eleven-button eleven-button-secondary py-1 px-2 text-xs"
+                aria-label="Close modal"
+                className="eleven-button eleven-button-secondary py-1 px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
               >
                 ✕
               </button>
@@ -337,8 +347,8 @@ export function CriticalFind({ onReferralCreated }) {
                 <span className="text-[#777169]">Target Hospital:</span>
                 <strong className="text-[#0c0a09] text-sm">{selectedCandidate.hospitalName}</strong>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#777169]">Travel ETA:</span>
+              <div className="flex items-center justify-between font-mono tabular-nums">
+                <span className="text-[#777169] font-sans">Travel ETA:</span>
                 <strong className="text-[#16a34a]">{selectedCandidate.etaMinutes} mins ({selectedCandidate.distanceKm} km)</strong>
               </div>
               <div className="flex items-center justify-between">
@@ -350,7 +360,8 @@ export function CriticalFind({ onReferralCreated }) {
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setSelectedCandidate(null)}
-                className="eleven-button eleven-button-secondary text-xs"
+                aria-label="Cancel confirmation"
+                className="eleven-button eleven-button-secondary text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
               >
                 Cancel
               </button>
@@ -358,10 +369,11 @@ export function CriticalFind({ onReferralCreated }) {
               <button
                 onClick={handleSendReferral}
                 disabled={creating}
-                className="eleven-button eleven-button-primary text-xs"
+                aria-label="Confirm and send referral request"
+                className="eleven-button eleven-button-primary text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
               >
-                <Send className="w-4 h-4" />
-                <span>{creating ? 'Sending...' : 'Send Referral (Soft-Hold)'}</span>
+                <Send className="w-4 h-4" aria-hidden="true" />
+                <span>{creating ? 'Sending…' : 'Send Referral (Soft-Hold)'}</span>
               </button>
             </div>
           </div>
