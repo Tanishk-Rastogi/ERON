@@ -358,8 +358,9 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
           aria-modal="true"
           aria-labelledby="modal-title"
         >
-          <div className="eleven-card w-full max-w-4xl max-h-[90vh] overflow-y-auto p-8 space-y-6 bg-white border-[#d6d3d1]">
-            <div className="flex items-center justify-between border-b border-[#e7e5e4] pb-4">
+          <div className="eleven-card w-full max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-white border-[#d6d3d1] shadow-2xl">
+            {/* Sticky Top Header with Always-Visible Close Button */}
+            <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-8 py-4 border-b border-[#e7e5e4] flex items-center justify-between shadow-2xs">
               <div>
                 <div className="flex items-center gap-2">
                   <h2 id="modal-title" className="text-lg font-light text-[#0c0a09]">Referral Details</h2>
@@ -375,11 +376,14 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
               <button
                 onClick={() => setSelectedReferral(null)}
                 aria-label="Close modal"
-                className="eleven-button eleven-button-secondary text-xs py-1 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
+                className="eleven-button eleven-button-secondary text-xs py-1.5 px-3.5 font-bold shadow-xs hover:bg-[#292524] hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
               >
                 ✕ Close
               </button>
             </div>
+
+            {/* Scrollable Modal Content Container */}
+            <div className="p-8 space-y-6 overflow-y-auto flex-1">
 
             {selectedReferral.status === 'RE_ROUTING' && (
               <div className="bg-[#f4c5a8]/30 border border-[#f4c5a8] p-4 rounded-2xl flex items-center gap-3 text-[#0c0a09] text-xs" role="status" aria-live="polite">
@@ -550,7 +554,8 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
             </div>
           </div>
         </div>
-      )}
+      </div>
+    )}
     </div>
   );
 }
