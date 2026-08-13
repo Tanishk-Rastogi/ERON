@@ -40,15 +40,13 @@ const MASTER_RESOURCES = [
 const HOSPITALS_MAP_DATA = [
   {
     id: 'hosp-a',
-    code: 'Hosp A',
     name: 'District Hospital Central',
     address: 'Indiranagar 100ft Road, East Zone',
     lat: 12.9716,
     lng: 77.5946,
-    distanceKm: '0.0', // Origin location
+    distanceKm: '0.0',
     phone: '+91 80 2520 1923',
     color: '#10b981', // Emerald green
-    statusText: 'Active Referral Origin',
     resources: [
       { name: 'ICU', available: 12, total: 30 },
       { name: 'Ventilator', available: 6, total: 15 },
@@ -66,7 +64,6 @@ const HOSPITALS_MAP_DATA = [
   },
   {
     id: 'hosp-b',
-    code: 'Hosp B',
     name: 'City Super Specialty Hospital',
     address: 'Koramangala 4th Block, South Zone',
     lat: 12.9352,
@@ -74,7 +71,6 @@ const HOSPITALS_MAP_DATA = [
     distanceKm: '5.2',
     phone: '+91 80 4115 8800',
     color: '#2563eb', // Blue
-    statusText: 'In-Transit Target Destination',
     resources: [
       { name: 'ICU', available: 3, total: 15 },
       { name: 'Trauma ICU', available: 2, total: 8 },
@@ -92,7 +88,6 @@ const HOSPITALS_MAP_DATA = [
   },
   {
     id: 'hosp-c',
-    code: 'Hosp C',
     name: 'Apex Trauma & Neurosurgery Institute',
     address: 'Malleshwaram West, North Zone',
     lat: 12.9988,
@@ -100,7 +95,6 @@ const HOSPITALS_MAP_DATA = [
     distanceKm: '3.4',
     phone: '+91 80 2334 5678',
     color: '#d97706', // Amber
-    statusText: 'Available Candidate Match',
     resources: [
       { name: 'ICU', available: 8, total: 25 },
       { name: 'Trauma ICU', available: 5, total: 12 },
@@ -123,7 +117,6 @@ const HOSPITALS_MAP_DATA = [
   },
   {
     id: 'hosp-d',
-    code: 'Hosp D',
     name: 'Valley Community Desk',
     address: 'Whitefield Main Road, East Zone',
     lat: 12.9698,
@@ -131,7 +124,6 @@ const HOSPITALS_MAP_DATA = [
     distanceKm: '12.8',
     phone: '+91 80 6718 2000',
     color: '#dc2626', // Red
-    statusText: 'No ICU Beds Available',
     resources: [
       { name: 'X-ray', available: 3, total: 5 },
       { name: 'ECG', available: 4, total: 6 },
@@ -154,8 +146,8 @@ function MapFlyToController({ targetPos, targetZoom, targetBounds }) {
   return null;
 }
 
-// Custom Google Maps Location Pin Marker with Medical Cross (+) Sign
-const createGoogleMapsPinIcon = (code, color, isMatch) => {
+// Custom Google Maps Location Pin Marker displaying ONLY Hospital Name
+const createGoogleMapsPinIcon = (name, color, isMatch) => {
   return L.divIcon({
     className: 'custom-google-maps-pin',
     html: `
@@ -198,17 +190,20 @@ const createGoogleMapsPinIcon = (code, color, isMatch) => {
         <div style="
           background: #1c1917;
           color: white;
-          font-family: monospace;
+          font-family: sans-serif;
           font-size: 10px;
           font-weight: bold;
-          padding: 2px 6px;
+          padding: 2.5px 8px;
           border-radius: 6px;
           margin-top: 4px;
           white-space: nowrap;
           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
           border: 1px solid rgba(255,255,255,0.2);
+          max-width: 140px;
+          overflow: hidden;
+          text-overflow: ellipsis;
         ">
-          ${code}
+          ${name}
         </div>
       </div>
     `,
@@ -314,14 +309,8 @@ export function TransferTab() {
     setMapTargetBounds(bounds);
   };
 
-  const routePolyline = [
-    [12.9716, 77.5946], // Hosp A
-    [12.9550, 77.6100], // Waypoint
-    [12.9352, 77.6245]  // Hosp B
-  ];
-
   return (
-    <div className="min-h-screen space-y-8 font-sans max-w-5xl mx-auto pt-4 pb-32">
+    <div className="min-h-screen space-y-6 font-sans max-w-7xl mx-auto pt-4 pb-32">
       {/* Prominent Multi-Select Search Bar */}
       <div ref={searchContainerRef} className="w-full relative">
         <div className="w-full bg-white border border-[#d6d3d1] rounded-2xl p-2.5 pl-11 pr-20 min-h-[58px] flex flex-wrap items-center gap-2 focus-within:border-[#292524] focus-within:ring-2 focus-within:ring-[#292524]/20 transition-all shadow-sm hover:shadow-md relative">
@@ -448,241 +437,211 @@ export function TransferTab() {
         </div>
 
         <div className="text-xs font-mono text-[#777169]">
-          Matching Hospitals: <strong className="text-[#0c0a09]">{activeMatchesCount}</strong> / {HOSPITALS_MAP_DATA.length}
+          Available Hospitals: <strong className="text-[#0c0a09]">{activeMatchesCount}</strong> / {HOSPITALS_MAP_DATA.length}
         </div>
       </div>
 
-      {/* Real Interactive OpenStreetMap Hospital Map Container */}
-      <div className="eleven-card bg-white border border-[#e7e5e4] rounded-2xl overflow-hidden shadow-sm space-y-0">
-        <div className="p-4 bg-[#fafafa] border-b border-[#e7e5e4] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-bold text-[#0c0a09] flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-emerald-600" />
-              <span>Real-Time Hospital & Regional Transfer Network Map</span>
-            </h2>
-            <p className="text-xs text-[#777169] font-light">
-              Use quick focus buttons below to navigate map smoothly without page scroll lock.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Origin
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Destination
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Candidate Match
+      {/* Side-by-Side Grid Layout: Hospital Sidebar (Left 4 cols) + Interactive Map View (Right 8 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* LEFT SIDEBAR: Hospitals Directory Cards (lg:col-span-4) */}
+        <div className="lg:col-span-4 space-y-3">
+          <div className="p-3 bg-[#fafafa] border border-[#e7e5e4] rounded-xl flex items-center justify-between">
+            <h3 className="text-xs font-bold font-mono text-[#0c0a09] uppercase tracking-wider flex items-center gap-1.5">
+              <Building2 className="w-4 h-4 text-emerald-600" />
+              <span>Hospitals ({filteredHospitals.length})</span>
+            </h3>
+            <span className="text-[11px] font-mono text-[#777169]">
+              <strong className="text-[#0c0a09]">{activeMatchesCount}</strong> matched
             </span>
           </div>
-        </div>
 
-        {/* Map Ergonomic Navigation Toolbar */}
-        <div className="p-3 bg-[#f5f5f5] border-b border-[#e7e5e4] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] text-[#777169] uppercase font-bold mr-1">Quick Focus:</span>
-            
-            <button
-              onClick={handleFitAllHospitalsOnMap}
-              className="px-2.5 py-1 bg-white border border-[#e7e5e4] rounded-lg hover:bg-[#292524] hover:text-white transition-all text-[11px] font-semibold shadow-2xs flex items-center gap-1"
-            >
-              <Maximize2 className="w-3 h-3" /> Fit All (4)
-            </button>
-
-            {HOSPITALS_MAP_DATA.map(hosp => (
-              <button
+          <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+            {filteredHospitals.map(hosp => (
+              <div 
                 key={hosp.id}
                 onClick={() => handleFocusHospitalOnMap(hosp)}
-                className="px-2.5 py-1 bg-white border rounded-lg hover:bg-[#292524] hover:text-white transition-all text-[11px] font-semibold shadow-2xs flex items-center gap-1 text-[#292524]"
-                style={{ borderColor: hosp.color + '60' }}
+                className={`eleven-card p-4 space-y-2.5 bg-white border cursor-pointer transition-all hover:shadow-md ${
+                  hosp.isMatch ? 'border-[#e7e5e4] hover:border-[#292524]' : 'border-red-200 bg-red-50/30 opacity-75'
+                }`}
               >
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: hosp.color }}></span>
-                {hosp.code}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setEnableWheelZoom(!enableWheelZoom)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all flex items-center gap-1 ${
-                enableWheelZoom 
-                  ? 'bg-emerald-600 text-white border-emerald-600' 
-                  : 'bg-white text-[#777169] border-[#e7e5e4] hover:text-[#0c0a09]'
-              }`}
-              title="Toggle mouse scroll wheel zoom"
-            >
-              <span>{enableWheelZoom ? 'Wheel Zoom: ON' : 'Wheel Zoom: OFF (Scroll Safe)'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Leaflet OpenStreetMap View */}
-        <div className="h-[480px] w-full relative z-10">
-          <MapContainer
-            center={[12.9716, 77.6100]}
-            zoom={12}
-            scrollWheelZoom={enableWheelZoom}
-            style={{ height: '100%', width: '100%' }}
-          >
-            <MapFlyToController 
-              targetPos={mapTargetPos} 
-              targetZoom={mapTargetZoom} 
-              targetBounds={mapTargetBounds} 
-            />
-
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            {/* Emergency Transit Route Corridor Polyline */}
-            <Polyline
-              positions={routePolyline}
-              pathOptions={{ color: '#2563eb', weight: 4, opacity: 0.8, dashArray: '8, 8' }}
-            />
-
-            {/* Google-Style Hospital Pins with Medical Cross Sign */}
-            {filteredHospitals.map(hosp => (
-              <Marker
-                key={hosp.id}
-                position={[hosp.lat, hosp.lng]}
-                icon={createGoogleMapsPinIcon(hosp.code, hosp.color, hosp.isMatch)}
-                eventHandlers={{
-                  dblclick: () => setDetailHospitalModal(hosp)
-                }}
-              >
-                <Popup className="custom-hospital-leaflet-popup">
-                  <div className="p-2.5 space-y-2.5 font-sans text-xs min-w-[240px]">
-                    <div className="border-b border-[#e7e5e4] pb-2">
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border" style={{ color: hosp.color, borderColor: hosp.color + '40', backgroundColor: hosp.color + '15' }}>
-                          {hosp.statusText}
-                        </span>
-                        {!hosp.isMatch && (
-                          <span className="text-[9px] font-mono text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md font-bold">
-                            FILTER MISMATCH
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="font-bold text-[#0c0a09] text-sm">{hosp.name}</h3>
-                      <p className="text-[#777169] text-[11px] mt-0.5">{hosp.address}</p>
-                    </div>
-
-                    {/* Distance from Current Location */}
-                    <div className="bg-[#f5f5f5] p-2 rounded-xl flex items-center justify-between font-mono text-xs">
-                      <span className="text-[#777169] text-[11px] flex items-center gap-1 font-sans">
-                        <Navigation className="w-3.5 h-3.5 text-emerald-600" /> Distance from origin:
-                      </span>
-                      <strong className="text-[#0c0a09] font-bold">
-                        {hosp.distanceKm === '0.0' ? 'Current Origin' : `${hosp.distanceKm} km`}
-                      </strong>
-                    </div>
-
-                    {/* Available Bed Count Summary */}
-                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                      <div className="bg-emerald-50 border border-emerald-100 p-2 rounded-lg">
-                        <span className="text-[10px] text-[#777169] block font-sans">ICU Beds:</span>
-                        <strong className="text-emerald-700">{hosp.resources.find(r=>r.name==='ICU')?.available || 0} Available</strong>
-                      </div>
-                      <div className="bg-blue-50 border border-blue-100 p-2 rounded-lg">
-                        <span className="text-[10px] text-[#777169] block font-sans">Ventilators:</span>
-                        <strong className="text-blue-700">{hosp.resources.find(r=>r.name==='Ventilator')?.available || 0} Available</strong>
-                      </div>
-                    </div>
-
-                    {/* Action Button to Open Full Hospital Resource Details Modal */}
-                    <button
-                      onClick={() => setDetailHospitalModal(hosp)}
-                      className="w-full eleven-button eleven-button-primary text-xs py-2 px-3 justify-center font-bold shadow-2xs hover:bg-[#292524] transition-all"
-                    >
-                      <span>View Full Resource Details</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-
-                    <div className="text-[10px] text-[#a8a29e] text-center font-mono">
-                      (Hint: Double-click pin anytime to open details)
-                    </div>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-[#0c0a09] text-sm truncate">{hosp.name}</h4>
+                    <p className="text-xs text-[#777169] truncate mt-0.5">{hosp.address}</p>
                   </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
-      </div>
 
-      {/* Hospital Network Summary List Cards (Big Scroll Page Section) */}
-      <div className="space-y-4 pt-4 border-t border-[#e7e5e4]">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-[#0c0a09] flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-[#292524]" />
-              <span>Regional Hospital Directory ({filteredHospitals.length})</span>
-            </h3>
-            <p className="text-xs text-[#777169]">
-              Scroll down to inspect individual hospital capacity or focus directly on map.
-            </p>
+                  <span className="text-xs font-mono text-[#777169] flex-shrink-0">
+                    {hosp.distanceKm === '0.0' ? 'Origin' : `${hosp.distanceKm} km`}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-[#fafafa] p-2 rounded-lg border border-[#f0efed]">
+                  <div>
+                    <span className="text-[10px] text-[#777169] block font-sans">ICU:</span>
+                    <strong className="text-emerald-700 text-xs">{hosp.resources.find(r=>r.name==='ICU')?.available || 0} Free</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[#777169] block font-sans">Ventilators:</span>
+                    <strong className="text-blue-700 text-xs">{hosp.resources.find(r=>r.name==='Ventilator')?.available || 0} Free</strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1 text-xs">
+                  <span className="text-[11px] font-mono text-[#777169] flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-[#292524]" /> {hosp.phone}
+                  </span>
+
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDetailHospitalModal(hosp); }}
+                    className="eleven-button eleven-button-secondary text-[11px] py-1 px-2.5 font-bold flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3" /> Details
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredHospitals.map(hosp => (
-            <div 
-              key={hosp.id} 
-              className={`eleven-card p-5 space-y-3 bg-white border transition-all ${
-                hosp.isMatch ? 'border-[#e7e5e4] hover:border-[#292524]' : 'border-red-200 bg-red-50/30 opacity-75'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border" style={{ color: hosp.color, borderColor: hosp.color + '40', backgroundColor: hosp.color + '15' }}>
-                    {hosp.statusText}
-                  </span>
-                  <h4 className="font-bold text-[#0c0a09] text-base mt-1">{hosp.name}</h4>
-                  <p className="text-xs text-[#777169]">{hosp.address}</p>
-                </div>
-
-                <div className="text-right font-mono flex-shrink-0">
-                  <span className="text-xs text-[#777169] block">Distance:</span>
-                  <strong className="text-sm text-[#0c0a09]">
-                    {hosp.distanceKm === '0.0' ? 'Origin' : `${hosp.distanceKm} km`}
-                  </strong>
-                </div>
-              </div>
-
-              {/* Bed Availability Badges */}
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-[#fafafa] p-2.5 rounded-xl border border-[#f0efed]">
-                <div>
-                  <span className="text-[10px] text-[#777169] block font-sans">ICU Beds:</span>
-                  <strong className="text-emerald-700">{hosp.resources.find(r=>r.name==='ICU')?.available || 0} Available</strong>
-                </div>
-                <div>
-                  <span className="text-[10px] text-[#777169] block font-sans">Ventilators:</span>
-                  <strong className="text-blue-700">{hosp.resources.find(r=>r.name==='Ventilator')?.available || 0} Available</strong>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#f0efed]">
-                <button
-                  onClick={() => handleFocusHospitalOnMap(hosp)}
-                  className="eleven-button eleven-button-secondary text-xs py-1.5 px-3 font-semibold flex items-center gap-1"
-                >
-                  <Locate className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Focus Map</span>
-                </button>
-
-                <button
-                  onClick={() => setDetailHospitalModal(hosp)}
-                  className="eleven-button eleven-button-primary text-xs py-1.5 px-3 font-semibold flex items-center gap-1"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>View Details</span>
-                </button>
-              </div>
+        {/* RIGHT SIDE: Real Interactive OpenStreetMap Hospital Map Container (lg:col-span-8) */}
+        <div className="lg:col-span-8 eleven-card bg-white border border-[#e7e5e4] rounded-2xl overflow-hidden shadow-sm space-y-0">
+          <div className="p-4 bg-[#fafafa] border-b border-[#e7e5e4] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-[#0c0a09] flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-emerald-600" />
+                <span>Hospital Network Map</span>
+              </h2>
+              <p className="text-xs text-[#777169] font-light">
+                Single-tap pin for distance popup. Double-tap pin to open full hospital resource details.
+              </p>
             </div>
-          ))}
+          </div>
+
+          {/* Map Ergonomic Navigation Toolbar */}
+          <div className="p-3 bg-[#f5f5f5] border-b border-[#e7e5e4] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] text-[#777169] uppercase font-bold mr-1">Focus:</span>
+              
+              <button
+                onClick={handleFitAllHospitalsOnMap}
+                className="px-2.5 py-1 bg-white border border-[#e7e5e4] rounded-lg hover:bg-[#292524] hover:text-white transition-all text-[11px] font-semibold shadow-2xs flex items-center gap-1"
+              >
+                <Maximize2 className="w-3 h-3" /> Fit All
+              </button>
+
+              {HOSPITALS_MAP_DATA.map(hosp => (
+                <button
+                  key={hosp.id}
+                  onClick={() => handleFocusHospitalOnMap(hosp)}
+                  className="px-2.5 py-1 bg-white border rounded-lg hover:bg-[#292524] hover:text-white transition-all text-[11px] font-semibold shadow-2xs flex items-center gap-1 text-[#292524] max-w-[130px] truncate"
+                  style={{ borderColor: hosp.color + '60' }}
+                  title={hosp.name}
+                >
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: hosp.color }}></span>
+                  <span className="truncate">{hosp.name.split(' ')[0]}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setEnableWheelZoom(!enableWheelZoom)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all flex items-center gap-1 ${
+                  enableWheelZoom 
+                    ? 'bg-emerald-600 text-white border-emerald-600' 
+                    : 'bg-white text-[#777169] border-[#e7e5e4] hover:text-[#0c0a09]'
+                }`}
+                title="Toggle mouse scroll wheel zoom"
+              >
+                <span>{enableWheelZoom ? 'Wheel Zoom: ON' : 'Wheel Zoom: OFF (Scroll Safe)'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Leaflet OpenStreetMap View */}
+          <div className="h-[520px] w-full relative z-10">
+            <MapContainer
+              center={[12.9716, 77.6100]}
+              zoom={12}
+              scrollWheelZoom={enableWheelZoom}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <MapFlyToController 
+                targetPos={mapTargetPos} 
+                targetZoom={mapTargetZoom} 
+                targetBounds={mapTargetBounds} 
+              />
+
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+
+              {/* Google-Style Hospital Pins with Medical Cross Sign */}
+              {filteredHospitals.map(hosp => (
+                <Marker
+                  key={hosp.id}
+                  position={[hosp.lat, hosp.lng]}
+                  icon={createGoogleMapsPinIcon(hosp.name, hosp.color, hosp.isMatch)}
+                  eventHandlers={{
+                    dblclick: () => setDetailHospitalModal(hosp)
+                  }}
+                >
+                  <Popup className="custom-hospital-leaflet-popup">
+                    <div className="p-2.5 space-y-2.5 font-sans text-xs min-w-[240px]">
+                      <div className="border-b border-[#e7e5e4] pb-2">
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <h3 className="font-bold text-[#0c0a09] text-sm">{hosp.name}</h3>
+                          {!hosp.isMatch && (
+                            <span className="text-[9px] font-mono text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md font-bold">
+                              FILTER MISMATCH
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[#777169] text-[11px] mt-0.5">{hosp.address}</p>
+                      </div>
+
+                      {/* Distance from Current Location */}
+                      <div className="bg-[#f5f5f5] p-2 rounded-xl flex items-center justify-between font-mono text-xs">
+                        <span className="text-[#777169] text-[11px] flex items-center gap-1 font-sans">
+                          <Navigation className="w-3.5 h-3.5 text-emerald-600" /> Distance:
+                        </span>
+                        <strong className="text-[#0c0a09] font-bold">
+                          {hosp.distanceKm === '0.0' ? 'Origin' : `${hosp.distanceKm} km`}
+                        </strong>
+                      </div>
+
+                      {/* Available Bed Count Summary */}
+                      <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                        <div className="bg-emerald-50 border border-emerald-100 p-2 rounded-lg">
+                          <span className="text-[10px] text-[#777169] block font-sans">ICU:</span>
+                          <strong className="text-emerald-700">{hosp.resources.find(r=>r.name==='ICU')?.available || 0} Available</strong>
+                        </div>
+                        <div className="bg-blue-50 border border-blue-100 p-2 rounded-lg">
+                          <span className="text-[10px] text-[#777169] block font-sans">Ventilators:</span>
+                          <strong className="text-blue-700">{hosp.resources.find(r=>r.name==='Ventilator')?.available || 0} Available</strong>
+                        </div>
+                      </div>
+
+                      {/* Action Button to Open Full Hospital Resource Details Modal */}
+                      <button
+                        onClick={() => setDetailHospitalModal(hosp)}
+                        className="w-full eleven-button eleven-button-primary text-xs py-2 px-3 justify-center font-bold shadow-2xs hover:bg-[#292524] transition-all"
+                      >
+                        <span>View Full Resource Details</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+
+                      <div className="text-[10px] text-[#a8a29e] text-center font-mono">
+                        (Hint: Double-click pin anytime to open details)
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
         </div>
       </div>
 
@@ -718,14 +677,14 @@ export function TransferTab() {
               {/* Distance & Contact Info */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-[#fafafa] border border-[#e7e5e4] p-3 rounded-xl text-xs font-mono">
                 <div>
-                  <span className="text-[#777169] text-[10px] block font-sans">Distance from Origin:</span>
+                  <span className="text-[#777169] text-[10px] block font-sans">Distance:</span>
                   <strong className="text-[#0c0a09] text-sm">
                     {detailHospitalModal.distanceKm === '0.0' ? 'Origin Location' : `${detailHospitalModal.distanceKm} km`}
                   </strong>
                 </div>
                 <div>
-                  <span className="text-[#777169] text-[10px] block font-sans">Hospital Status:</span>
-                  <strong style={{ color: detailHospitalModal.color }}>{detailHospitalModal.statusText}</strong>
+                  <span className="text-[#777169] text-[10px] block font-sans">Hospital:</span>
+                  <strong style={{ color: detailHospitalModal.color }}>{detailHospitalModal.name}</strong>
                 </div>
                 <div>
                   <span className="text-[#777169] text-[10px] block font-sans">Direct Desk Phone:</span>
@@ -788,7 +747,7 @@ export function TransferTab() {
                   {detailHospitalModal.resources
                     .filter(r => !selectedTags.some(t => t.toLowerCase() === r.name.toLowerCase()))
                     .map(r => (
-                      <div key={r.name} className="p-3 bg-white border border-[#e7e5e4] rounded-lg flex items-center justify-between text-xs">
+                      <div key={r.name} className="p-3 bg-[#fafafa] border border-[#e7e5e4] rounded-lg flex items-center justify-between text-xs">
                         <span className="font-semibold text-[#292524]">{r.name}</span>
                         <span className="font-mono text-xs font-bold text-emerald-600">
                           {r.available} Available {r.total ? `/ ${r.total}` : ''}
