@@ -1,37 +1,37 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Sparkles } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 const MASTER_RESOURCES = [
-  { name: 'ICU', category: 'Beds & Care Units', icon: '🛏️' },
-  { name: 'Trauma ICU', category: 'Beds & Care Units', icon: '🛏️' },
-  { name: 'PICU', category: 'Beds & Care Units', icon: '👶' },
-  { name: 'NICU', category: 'Beds & Care Units', icon: '👶' },
-  { name: 'Ventilator', category: 'Respiratory Support', icon: '🫁' },
-  { name: 'HFNC', category: 'Respiratory Support', icon: '🫁' },
-  { name: 'Emergency Department', category: 'Emergency & Trauma', icon: '🚨' },
-  { name: 'Trauma Center', category: 'Emergency & Trauma', icon: '🚨' },
-  { name: 'Emergency OT', category: 'Operating Theaters', icon: '🏥' },
-  { name: 'Blood Bank', category: 'Blood & Transfusion', icon: '🩸' },
-  { name: 'CT Scan', category: 'Imaging & Radiology', icon: '🩻' },
-  { name: 'MRI', category: 'Imaging & Radiology', icon: '🩻' },
-  { name: 'X-ray', category: 'Imaging & Radiology', icon: '🩻' },
-  { name: 'Ultrasound', category: 'Imaging & Radiology', icon: '🩻' },
-  { name: 'ECG', category: 'Cardiac Care', icon: '❤️' },
-  { name: 'Stroke Unit', category: 'Neurology & Stroke', icon: '🧠' },
-  { name: 'Dialysis', category: 'Specialized Treatment', icon: '🩺' },
-  { name: 'General Surgeon', category: 'Specialist Availability', icon: '👨‍⚕️' },
-  { name: 'Trauma Surgeon', category: 'Specialist Availability', icon: '👨‍⚕️' },
-  { name: 'Neurosurgeon', category: 'Specialist Availability', icon: '🧠' },
-  { name: 'Orthopedic Surgeon', category: 'Specialist Availability', icon: '🦴' },
-  { name: 'Cardiologist', category: 'Specialist Availability', icon: '❤️' },
-  { name: 'Neurologist', category: 'Specialist Availability', icon: '🧠' },
-  { name: 'Anesthesiologist', category: 'Specialist Availability', icon: '👨‍⚕️' },
-  { name: 'Intensivist', category: 'Specialist Availability', icon: '👨‍⚕️' },
-  { name: 'Burn Unit', category: 'Burn Care', icon: '🔥' },
-  { name: 'Obstetrician', category: 'Obstetrics & Gynecology', icon: '🤰' },
-  { name: 'Labor Room', category: 'Obstetrics & Gynecology', icon: '🤰' },
-  { name: 'Neonatologist', category: 'Pediatric Services', icon: '👶' },
-  { name: 'Pediatrician', category: 'Pediatric Services', icon: '👶' },
+  { name: 'ICU', category: 'Beds & Care Units' },
+  { name: 'Trauma ICU', category: 'Beds & Care Units' },
+  { name: 'PICU', category: 'Beds & Care Units' },
+  { name: 'NICU', category: 'Beds & Care Units' },
+  { name: 'Ventilator', category: 'Respiratory Support' },
+  { name: 'HFNC', category: 'Respiratory Support' },
+  { name: 'Emergency Department', category: 'Emergency & Trauma' },
+  { name: 'Trauma Center', category: 'Emergency & Trauma' },
+  { name: 'Emergency OT', category: 'Operating Theaters' },
+  { name: 'Blood Bank', category: 'Blood & Transfusion' },
+  { name: 'CT Scan', category: 'Imaging & Radiology' },
+  { name: 'MRI', category: 'Imaging & Radiology' },
+  { name: 'X-ray', category: 'Imaging & Radiology' },
+  { name: 'Ultrasound', category: 'Imaging & Radiology' },
+  { name: 'ECG', category: 'Cardiac Care' },
+  { name: 'Stroke Unit', category: 'Neurology & Stroke' },
+  { name: 'Dialysis', category: 'Specialized Treatment' },
+  { name: 'General Surgeon', category: 'Specialist Availability' },
+  { name: 'Trauma Surgeon', category: 'Specialist Availability' },
+  { name: 'Neurosurgeon', category: 'Specialist Availability' },
+  { name: 'Orthopedic Surgeon', category: 'Specialist Availability' },
+  { name: 'Cardiologist', category: 'Specialist Availability' },
+  { name: 'Neurologist', category: 'Specialist Availability' },
+  { name: 'Anesthesiologist', category: 'Specialist Availability' },
+  { name: 'Intensivist', category: 'Specialist Availability' },
+  { name: 'Burn Unit', category: 'Burn Care' },
+  { name: 'Obstetrician', category: 'Obstetrics & Gynecology' },
+  { name: 'Labor Room', category: 'Obstetrics & Gynecology' },
+  { name: 'Neonatologist', category: 'Pediatric Services' },
+  { name: 'Pediatrician', category: 'Pediatric Services' },
 ];
 
 export function TransferTab() {
@@ -118,10 +118,7 @@ export function TransferTab() {
         {showSuggestions && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#e7e5e4] rounded-2xl shadow-xl z-50 max-h-80 overflow-y-auto divide-y divide-[#f0efed] animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="p-2.5 bg-[#fafafa] border-b border-[#e7e5e4] flex items-center justify-between text-[11px] font-mono font-bold text-[#777169]">
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>TRACKABLE HOSPITAL RESOURCES ({filteredSuggestions.length})</span>
-              </span>
+              <span>TRACKABLE HOSPITAL RESOURCES ({filteredSuggestions.length})</span>
               <span>Press ↑ ↓ to navigate</span>
             </div>
 
@@ -138,10 +135,7 @@ export function TransferTab() {
                     idx === selectedIndex ? 'bg-[#292524] text-white' : 'hover:bg-[#f5f5f5] text-[#0c0a09]'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base">{item.icon}</span>
-                    <span className="font-bold">{item.name}</span>
-                  </div>
+                  <span className="font-bold">{item.name}</span>
 
                   <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
                     idx === selectedIndex 
