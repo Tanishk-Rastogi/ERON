@@ -441,70 +441,10 @@ export function TransferTab() {
         </div>
       </div>
 
-      {/* Side-by-Side Grid Layout: Hospital Sidebar (Left 4 cols) + Interactive Map View (Right 8 cols) */}
+      {/* Side-by-Side Grid Layout: Map View (LEFT lg:col-span-8) + Hospital Sidebar (RIGHT lg:col-span-4) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* LEFT SIDEBAR: Hospitals Directory Cards (lg:col-span-4) */}
-        <div className="lg:col-span-4 space-y-3">
-          <div className="p-3 bg-[#fafafa] border border-[#e7e5e4] rounded-xl flex items-center justify-between">
-            <h3 className="text-xs font-bold font-mono text-[#0c0a09] uppercase tracking-wider flex items-center gap-1.5">
-              <Building2 className="w-4 h-4 text-emerald-600" />
-              <span>Hospitals ({filteredHospitals.length})</span>
-            </h3>
-            <span className="text-[11px] font-mono text-[#777169]">
-              <strong className="text-[#0c0a09]">{activeMatchesCount}</strong> matched
-            </span>
-          </div>
-
-          <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
-            {filteredHospitals.map(hosp => (
-              <div 
-                key={hosp.id}
-                onClick={() => handleFocusHospitalOnMap(hosp)}
-                className={`eleven-card p-4 space-y-2.5 bg-white border cursor-pointer transition-all hover:shadow-md ${
-                  hosp.isMatch ? 'border-[#e7e5e4] hover:border-[#292524]' : 'border-red-200 bg-red-50/30 opacity-75'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-[#0c0a09] text-sm truncate">{hosp.name}</h4>
-                    <p className="text-xs text-[#777169] truncate mt-0.5">{hosp.address}</p>
-                  </div>
-
-                  <span className="text-xs font-mono text-[#777169] flex-shrink-0">
-                    {hosp.distanceKm === '0.0' ? 'Origin' : `${hosp.distanceKm} km`}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-[#fafafa] p-2 rounded-lg border border-[#f0efed]">
-                  <div>
-                    <span className="text-[10px] text-[#777169] block font-sans">ICU:</span>
-                    <strong className="text-emerald-700 text-xs">{hosp.resources.find(r=>r.name==='ICU')?.available || 0} Free</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-[#777169] block font-sans">Ventilators:</span>
-                    <strong className="text-blue-700 text-xs">{hosp.resources.find(r=>r.name==='Ventilator')?.available || 0} Free</strong>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="text-[11px] font-mono text-[#777169] flex items-center gap-1">
-                    <Phone className="w-3 h-3 text-[#292524]" /> {hosp.phone}
-                  </span>
-
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDetailHospitalModal(hosp); }}
-                    className="eleven-button eleven-button-secondary text-[11px] py-1 px-2.5 font-bold flex items-center gap-1"
-                  >
-                    <Eye className="w-3 h-3" /> Details
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* RIGHT SIDE: Real Interactive OpenStreetMap Hospital Map Container (lg:col-span-8) */}
+        {/* LEFT SIDE: Real Interactive OpenStreetMap Hospital Map Container (lg:col-span-8) */}
         <div className="lg:col-span-8 eleven-card bg-white border border-[#e7e5e4] rounded-2xl overflow-hidden shadow-sm space-y-0">
           <div className="p-4 bg-[#fafafa] border-b border-[#e7e5e4] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -643,6 +583,67 @@ export function TransferTab() {
             </MapContainer>
           </div>
         </div>
+
+        {/* RIGHT SIDEBAR: Hospitals Directory Cards (lg:col-span-4) */}
+        <div className="lg:col-span-4 space-y-3">
+          <div className="p-3 bg-[#fafafa] border border-[#e7e5e4] rounded-xl flex items-center justify-between">
+            <h3 className="text-xs font-bold font-mono text-[#0c0a09] uppercase tracking-wider flex items-center gap-1.5">
+              <Building2 className="w-4 h-4 text-emerald-600" />
+              <span>Hospitals ({filteredHospitals.length})</span>
+            </h3>
+            <span className="text-[11px] font-mono text-[#777169]">
+              <strong className="text-[#0c0a09]">{activeMatchesCount}</strong> matched
+            </span>
+          </div>
+
+          <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+            {filteredHospitals.map(hosp => (
+              <div 
+                key={hosp.id}
+                onClick={() => handleFocusHospitalOnMap(hosp)}
+                className={`eleven-card p-4 space-y-2.5 bg-white border cursor-pointer transition-all hover:shadow-md ${
+                  hosp.isMatch ? 'border-[#e7e5e4] hover:border-[#292524]' : 'border-red-200 bg-red-50/30 opacity-75'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-[#0c0a09] text-sm truncate">{hosp.name}</h4>
+                    <p className="text-xs text-[#777169] truncate mt-0.5">{hosp.address}</p>
+                  </div>
+
+                  <span className="text-xs font-mono text-[#777169] flex-shrink-0">
+                    {hosp.distanceKm === '0.0' ? 'Origin' : `${hosp.distanceKm} km`}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-[#fafafa] p-2 rounded-lg border border-[#f0efed]">
+                  <div>
+                    <span className="text-[10px] text-[#777169] block font-sans">ICU:</span>
+                    <strong className="text-emerald-700 text-xs">{hosp.resources.find(r=>r.name==='ICU')?.available || 0} Free</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[#777169] block font-sans">Ventilators:</span>
+                    <strong className="text-blue-700 text-xs">{hosp.resources.find(r=>r.name==='Ventilator')?.available || 0} Free</strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1 text-xs">
+                  <span className="text-[11px] font-mono text-[#777169] flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-[#292524]" /> {hosp.phone}
+                  </span>
+
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDetailHospitalModal(hosp); }}
+                    className="eleven-button eleven-button-secondary text-[11px] py-1 px-2.5 font-bold flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3" /> Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
       {/* Hospital Full Details Modal */}
