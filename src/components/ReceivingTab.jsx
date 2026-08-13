@@ -21,6 +21,78 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+const DEMO_INCOMING_REFERRALS = [
+  {
+    id: 'demo-ref-1',
+    patientRefCode: '8941',
+    status: 'IN_TRANSIT',
+    requirementSummary: 'Acute Traumatic Brain Injury — Requires ICU + Neurosurgeon + Ventilator + CT',
+    originHospitalName: 'District Hospital Central',
+    targetHospitalName: 'City Super Specialty Hospital',
+    eta: '7-10 mins',
+    ambulance: { id: 'AMB-101', driver: 'Rajesh Verma (ALS Desk)' },
+    patientData: {
+      patientName: 'Karan Sharma',
+      patientAge: 42,
+      patientSex: 'MALE',
+      clinicalSummary: 'Acute Traumatic Brain Injury — Subdural Hematoma with Midline Shift. Requires urgent ICU bed & neurosurgical evaluation.',
+      diagnosisSuspected: 'Acute Subdural Hematoma with Midline Shift',
+      treatmentGiven: 'IV Mannitol, Intubated on manual bag',
+      medications: ['Inj. Mannitol 100ml', 'Inj. Ceftriaxone 1g'],
+      allergies: ['Penicillin'],
+      vitals: { bp: '140/90', hr: 110, spo2: 94, rr: 24, temp: '98.6 F', gcs: 8 },
+      reasonForReferral: 'No neurosurgeon available at District Hospital A',
+      referringDoctorName: 'Dr. Ramesh Kumar (CMO)'
+    }
+  },
+  {
+    id: 'demo-ref-2',
+    patientRefCode: '5521',
+    status: 'ACCEPTED',
+    requirementSummary: 'Acute STEMI / Cardiac Shock — Requires Cardiac OT + Cath Lab + Intra-aortic Balloon Pump',
+    originHospitalName: 'Valley Community Desk',
+    targetHospitalName: 'City Super Specialty Hospital',
+    eta: '14-18 mins',
+    ambulance: { id: 'AMB-204', driver: 'Suresh Patil (Cardiac Care)' },
+    patientData: {
+      patientName: 'Priya Sundaram',
+      patientAge: 58,
+      patientSex: 'FEMALE',
+      clinicalSummary: 'Anterior Wall STEMI with cardiogenic shock. ST elevation in V1-V4.',
+      diagnosisSuspected: 'Acute Anterior Myocardial Infarction',
+      treatmentGiven: 'Dual Antiplatelets, Inj. Heparin 5000 IU, Oxygen at 6L/min',
+      medications: ['Tab. Aspirin 300mg', 'Tab. Clopidogrel 300mg', 'Inj. Heparin'],
+      allergies: ['None known'],
+      vitals: { bp: '90/60', hr: 125, spo2: 92, rr: 26, temp: '98.2 F', gcs: 14 },
+      reasonForReferral: 'Cath Lab unavailable at Valley Desk',
+      referringDoctorName: 'Dr. Ananya Reddy'
+    }
+  },
+  {
+    id: 'demo-ref-3',
+    patientRefCode: '3019',
+    status: 'IN_TRANSIT',
+    requirementSummary: 'Severe Multiple Poly-Trauma — Requires Trauma OT + Massive Transfusion + Orthopedic Surgeon',
+    originHospitalName: 'Peripheral Emergency Bay',
+    targetHospitalName: 'City Super Specialty Hospital',
+    eta: '4-6 mins',
+    ambulance: { id: 'AMB-309', driver: 'Vikram Singh (Trauma Unit)' },
+    patientData: {
+      patientName: 'Anil Deshmukh',
+      patientAge: 35,
+      patientSex: 'MALE',
+      clinicalSummary: 'High-speed motor vehicle collision. Bilateral femur fractures and blunt abdominal trauma.',
+      diagnosisSuspected: 'Blunt Abdominal Trauma with Hemoperitoneum & Fractured Femur',
+      treatmentGiven: 'Bilateral Thomas splints, 2L Normal Saline IV wide open',
+      medications: ['Inj. Tranexamic Acid 1g', 'Inj. Fentanyl 50mcg'],
+      allergies: ['Sulfa drugs'],
+      vitals: { bp: '95/55', hr: 132, spo2: 95, rr: 28, temp: '97.9 F', gcs: 12 },
+      reasonForReferral: 'Massive blood transfusion protocol required',
+      referringDoctorName: 'Dr. Sunita Rao'
+    }
+  }
+];
+
 const createAmbulanceIcon = (label) => {
   return L.divIcon({
     className: 'custom-ambulance-leaflet-marker',
@@ -102,7 +174,7 @@ function ReceivingLiveDeliveryMap({ referral }) {
         </div>
 
         <div className="text-[11px] text-[#777169] flex items-center gap-2">
-          <span>ETA: <strong className="text-emerald-700 font-bold">7-10 Mins</strong></span>
+          <span>ETA: <strong className="text-emerald-700 font-bold">{referral?.eta || '7-10 Mins'}</strong></span>
           <span>•</span>
           <span>Dist: <strong className="text-[#0c0a09]">5.2 km</strong></span>
         </div>
@@ -171,19 +243,30 @@ function ReceivingLiveDeliveryMap({ referral }) {
 export function ReceivingTab({ onNavigateToCapacity }) {
   const { referrals } = useWebSocket();
   const [selectedReferral, setSelectedReferral] = useState(null);
+  const [activeSelectedRef, setActiveSelectedRef] = useState(null);
   const [packetData, setPacketData] = useState(null);
   const [loadingPacket, setLoadingPacket] = useState(false);
-  const [showLiveMapModal, setShowLiveMapModal] = useState(false);
 
-  const incomingReferrals = referrals.filter(r => 
+  const realIncomingReferrals = referrals.filter(r => 
     (r.targetHospitalId === 'hosp-b' || r.targetHospitalId === 'hosp-c' || r.acceptedHospitalId === 'hosp-b' || r.acceptedHospitalId === 'hosp-c') &&
     r.status !== 'COMPLETED'
   );
 
+  const displayedIncomingReferrals = realIncomingReferrals.length > 0 ? realIncomingReferrals : DEMO_INCOMING_REFERRALS;
+
+  const currentMapReferral = activeSelectedRef || displayedIncomingReferrals[0];
+
   const handleSelectReferral = async (ref) => {
     setSelectedReferral(ref);
+    setActiveSelectedRef(ref);
     setPacketData(null);
     setLoadingPacket(true);
+
+    if (ref.patientData) {
+      setPacketData(ref.patientData);
+      setLoadingPacket(false);
+      return;
+    }
 
     try {
       const res = await fetch(`/api/referrals/${ref.id}/packet`);
@@ -255,86 +338,81 @@ export function ReceivingTab({ onNavigateToCapacity }) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-bold text-[#777169] uppercase tracking-widest font-mono">
-            INCOMING PATIENTS (<span className="tabular-nums">{incomingReferrals.length}</span>)
+            INCOMING PATIENTS (<span className="tabular-nums">{displayedIncomingReferrals.length}</span>)
           </h2>
         </div>
 
-        {incomingReferrals.length === 0 ? (
-          <div className="eleven-card p-12 text-center text-xs text-[#777169] space-y-2 bg-white">
-            <CheckCircle2 className="w-10 h-10 text-[#16a34a] mx-auto" aria-hidden="true" />
-            <h3 className="font-semibold text-[#0c0a09]">No Incoming Patient Transfers</h3>
-            <p>Your hospital has no active incoming emergency referrals right now.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            
-            {/* Left Side: Incoming Patient Cards (lg:col-span-5) */}
-            <div className="lg:col-span-5 space-y-4">
-              {incomingReferrals.map((ref) => (
-                <div
-                  key={ref.id}
-                  className="eleven-card p-6 space-y-4 bg-white border border-[#e7e5e4] hover:border-[#292524] shadow-2xs transition-all"
-                >
-                  <div className="flex items-center justify-between border-b border-[#f0efed] pb-3">
-                    <div className="flex items-center gap-2 font-mono tabular-nums">
-                      <span className="text-base font-bold text-[#0c0a09]">#{ref.patientRefCode}</span>
-                      <span className="eleven-badge bg-blue-50 text-blue-700 border-blue-200 font-bold">
-                        {ref.status}
-                      </span>
-                    </div>
-
-                    <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 font-mono tabular-nums bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                      <Clock className="w-3.5 h-3.5" aria-hidden="true" /> ETA: 7-10 mins
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Side: Incoming Patient Cards (lg:col-span-5) */}
+          <div className="lg:col-span-5 space-y-4">
+            {displayedIncomingReferrals.map((ref) => (
+              <div
+                key={ref.id}
+                onClick={() => setActiveSelectedRef(ref)}
+                className={`eleven-card p-6 space-y-4 bg-white border transition-all cursor-pointer ${
+                  currentMapReferral.id === ref.id ? 'border-[#292524] ring-2 ring-[#292524]/10 shadow-md' : 'border-[#e7e5e4] hover:border-[#292524]'
+                }`}
+              >
+                <div className="flex items-center justify-between border-b border-[#f0efed] pb-3">
+                  <div className="flex items-center gap-2 font-mono tabular-nums">
+                    <span className="text-base font-bold text-[#0c0a09]">#{ref.patientRefCode}</span>
+                    <span className="eleven-badge bg-blue-50 text-blue-700 border-blue-200 font-bold">
+                      {ref.status}
                     </span>
                   </div>
 
-                  <div className="space-y-2 min-w-0">
-                    <div className="flex items-center gap-2 text-xs font-bold text-[#2563eb]">
-                      <Stethoscope className="w-4 h-4 text-[#2563eb]" />
-                      <span className="truncate">{ref.requirementSummary ? ref.requirementSummary.split(' — ')[0] : 'Acute Traumatic Brain Injury'}</span>
-                    </div>
+                  <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 font-mono tabular-nums bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    <Clock className="w-3.5 h-3.5" aria-hidden="true" /> ETA: {ref.eta || '7-10 mins'}
+                  </span>
+                </div>
 
-                    <p className="text-xs text-[#777169] truncate">
-                      Origin Hospital: <strong className="text-[#0c0a09]">{ref.originHospitalName}</strong>
-                    </p>
-
-                    <div className="flex items-center gap-2 text-xs font-mono text-[#292524] bg-[#fafafa] p-2 rounded-xl border border-[#e7e5e4]">
-                      <Ambulance className="w-4 h-4 text-amber-500" />
-                      <span>{ref.ambulance?.id || 'AMB-101'} (ALS Support)</span>
-                      <span className="text-[#777169] text-[10px] font-sans">• {ref.ambulance?.driver || 'Rajesh Verma'}</span>
-                    </div>
+                <div className="space-y-2 min-w-0">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#2563eb]">
+                    <Stethoscope className="w-4 h-4 text-[#2563eb]" />
+                    <span className="truncate">{ref.requirementSummary ? ref.requirementSummary.split(' — ')[0] : 'Acute Traumatic Brain Injury'}</span>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center justify-between pt-3 border-t border-[#f0efed] gap-2 text-xs">
-                    <button
-                      onClick={() => handleSelectReferral(ref)}
-                      aria-label={`View detailed clinical info for referral #${ref.patientRefCode}`}
-                      className="eleven-button eleven-button-primary py-2 px-3 text-xs font-bold flex items-center gap-1.5 flex-1 justify-center"
-                    >
-                      <FileText className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>View Patient Clinical Details</span>
-                    </button>
+                  <p className="text-xs text-[#777169] truncate">
+                    Origin Hospital: <strong className="text-[#0c0a09]">{ref.originHospitalName}</strong>
+                  </p>
 
-                    <button
-                      onClick={() => handleCompleteHandover(ref.id)}
-                      aria-label={`Complete handover for referral #${ref.patientRefCode}`}
-                      className="eleven-button eleven-button-secondary py-2 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all focus-visible:outline-none"
-                    >
-                      Complete
-                    </button>
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#292524] bg-[#fafafa] p-2 rounded-xl border border-[#e7e5e4]">
+                    <Ambulance className="w-4 h-4 text-amber-500" />
+                    <span>{ref.ambulance?.id || 'AMB-101'} (ALS Support)</span>
+                    <span className="text-[#777169] text-[10px] font-sans">• {ref.ambulance?.driver || 'Rajesh Verma'}</span>
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Right Side: Live OpenStreetMap Emergency Transit Map (lg:col-span-7) */}
-            <div className="lg:col-span-7 space-y-4">
-              <ReceivingLiveDeliveryMap referral={incomingReferrals[0]} />
-            </div>
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-3 border-t border-[#f0efed] gap-2 text-xs">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleSelectReferral(ref); }}
+                    aria-label={`View detailed clinical info for referral #${ref.patientRefCode}`}
+                    className="eleven-button eleven-button-primary py-2 px-3 text-xs font-bold flex items-center gap-1.5 flex-1 justify-center"
+                  >
+                    <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>View Patient Clinical Details</span>
+                  </button>
 
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleCompleteHandover(ref.id); }}
+                    aria-label={`Complete handover for referral #${ref.patientRefCode}`}
+                    className="eleven-button eleven-button-secondary py-2 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all focus-visible:outline-none"
+                  >
+                    Complete
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
+
+          {/* Right Side: Live OpenStreetMap Emergency Transit Map (lg:col-span-7) */}
+          <div className="lg:col-span-7 space-y-4">
+            <ReceivingLiveDeliveryMap referral={currentMapReferral} />
+          </div>
+
+        </div>
       </div>
 
       {/* DETAILED PATIENT CLINICAL INFO MODAL */}
@@ -474,8 +552,8 @@ export function ReceivingTab({ onNavigateToCapacity }) {
                         <AlertTriangle className="w-4 h-4 text-amber-600" /> Medications & Allergies:
                       </h4>
                       <div className="bg-white p-2.5 rounded-xl border border-[#e7e5e4] space-y-1">
-                        <p><strong className="text-[#777169]">Administered:</strong> Inj. Mannitol 100ml, Inj. Ceftriaxone 1g</p>
-                        <p className="text-red-600 font-bold"><strong className="text-[#777169]">Allergies:</strong> Penicillin</p>
+                        <p><strong className="text-[#777169]">Administered:</strong> {packetData?.medications?.join(', ') || 'Inj. Mannitol 100ml, Inj. Ceftriaxone 1g'}</p>
+                        <p className="text-red-600 font-bold"><strong className="text-[#777169]">Allergies:</strong> {packetData?.allergies?.join(', ') || 'Penicillin'}</p>
                       </div>
                     </div>
                   </div>
