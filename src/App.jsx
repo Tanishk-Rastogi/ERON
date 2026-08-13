@@ -75,7 +75,6 @@ function AppContent() {
         setActiveTab={setActiveTab}
         authSession={authSession}
         onLogout={handleLogout}
-        onOpenSMS={() => setIsSmsModalOpen(true)}
       />
 
       {/* Live Toast Notification Banner */}

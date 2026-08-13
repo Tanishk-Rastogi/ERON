@@ -18,16 +18,26 @@ import {
 } from 'lucide-react';
 
 export function MainDashboard({ onNavigateToCriticalFind }) {
-  const { referrals, isConnected, refreshAll } = useWebSocket();
+  const { referrals, isConnected, refreshAll, setLastNotification } = useWebSocket();
   const [selectedReferral, setSelectedReferral] = useState(null);
   const [activeSubTab, setActiveSubTab] = useState('sending');
   const [decryptedPacket, setDecryptedPacket] = useState(null);
   const [loadingPacket, setLoadingPacket] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const sendingReferrals = referrals.filter(r => r.originHospitalId === 'hosp-a' || r.originHospitalId === 'hosp-d');
   const receivingReferrals = referrals.filter(r => r.targetHospitalId === 'hosp-b' || r.targetHospitalId === 'hosp-c');
 
   const displayedReferrals = activeSubTab === 'sending' ? sendingReferrals : receivingReferrals;
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    refreshAll();
+    if (setLastNotification) {
+      setLastNotification({ id: Date.now(), text: 'Referral queue data refreshed successfully.', type: 'info' });
+    }
+    setTimeout(() => setIsRefreshing(false), 600);
+  };
 
   const handleOpenDetail = async (ref) => {
     setSelectedReferral(ref);
@@ -102,27 +112,21 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
 
         <div className="flex items-center gap-3 flex-shrink-0">
           <button
-            onClick={refreshAll}
+            onClick={handleRefresh}
             aria-label="Refresh referral queue data"
             className="eleven-button eleven-button-secondary text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
           >
-            <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Refresh</span>
-          </button>
-
-          <button
-            onClick={onNavigateToCriticalFind}
-            aria-label="Create new critical referral"
-            className="eleven-button eleven-button-primary text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
-          >
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            <span>New Critical Referral</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </div>
 
-      {/* Referral List */}
-      <div className="grid grid-cols-1 gap-4">
+      {/* Referral List with Smooth Tab Switching Animation */}
+      <div 
+        key={activeSubTab} 
+        className="grid grid-cols-1 gap-4 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
+      >
         {displayedReferrals.length === 0 ? (
           <div className="eleven-card p-12 text-center space-y-3">
             <CheckCircle2 className="w-12 h-12 text-[#a8a29e] mx-auto" aria-hidden="true" />

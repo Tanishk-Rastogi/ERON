@@ -8,7 +8,7 @@ import {
   MessageSquareText
 } from 'lucide-react';
 
-export function Header({ activeTab, setActiveTab, authSession, onLogout, onOpenSMS }) {
+export function Header({ activeTab, setActiveTab, authSession, onLogout }) {
   const navItems = [
     { id: 'dashboard', label: 'Main Dashboard', icon: LayoutDashboard },
     { id: 'messages', label: 'Messaging & Test Suite', icon: MessageSquareText, badge: 'REAL-TIME' },
@@ -34,39 +34,25 @@ export function Header({ activeTab, setActiveTab, authSession, onLogout, onOpenS
             </div>
           </div>
 
-          {/* Logged-In Hospital Badge & Switch Button */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onOpenSMS}
-              className="eleven-button eleven-button-primary text-xs py-1.5 px-3 flex items-center gap-1.5 font-mono"
-              title="Open SMS 1923 Sandbox Modal"
-            >
-              <MessageSquareText className="w-3.5 h-3.5" />
-              <span>SMS 1923 Sandbox</span>
-            </button>
+          {/* Logged-In Hospital Badge & Logout Button */}
+          {authSession && (
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex flex-col items-end text-xs">
+                <span className="font-bold text-[#0c0a09] truncate max-w-[200px]">
+                  {authSession.hospitalName}
+                </span>
+              </div>
 
-            {authSession && (
-              <>
-                <div className="hidden sm:flex flex-col items-end text-xs">
-                  <span className="font-bold text-[#0c0a09] truncate max-w-[200px]">
-                    {authSession.hospitalName}
-                  </span>
-                  <span className="text-[10px] text-[#777169] font-mono">
-                    {authSession.roleDesk || 'Hospital Desk'}
-                  </span>
-                </div>
-
-                <button
-                  onClick={onLogout}
-                  aria-label="Switch hospital or log out"
-                  className="eleven-button eleven-button-secondary text-xs py-1.5 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
-                  title="Log out or switch hospital facility"
-                >
-                  <span>Switch Hospital</span>
-                </button>
-              </>
-            )}
-          </div>
+              <button
+                onClick={onLogout}
+                aria-label="Log out"
+                className="eleven-button eleven-button-secondary text-xs py-1.5 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
+                title="Log out of hospital facility"
+              >
+                <span>Logout</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Navigation Tabs */}
