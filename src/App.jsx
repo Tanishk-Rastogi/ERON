@@ -40,7 +40,7 @@ function AppContent() {
   const [decryptedPacketData, setDecryptedPacketData] = useState(null);
   const [loadingPacket, setLoadingPacket] = useState(false);
 
-  const { lastNotification, setLastNotification } = useWebSocket();
+  const [preSelectedReceivingRef, setPreSelectedReceivingRef] = useState(null);
 
   const handleLogout = () => {
     localStorage.removeItem('eron_auth_session');
@@ -104,7 +104,13 @@ function AppContent() {
       {/* Main Screen Content Router */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
         {activeTab === 'dashboard' && (
-          <MainDashboard onNavigateToCriticalFind={() => setActiveTab('critical-find')} />
+          <MainDashboard 
+            onNavigateToCriticalFind={() => setActiveTab('critical-find')}
+            onRedirectToReceiving={(ref) => {
+              setPreSelectedReceivingRef(ref);
+              setActiveTab('receiving');
+            }}
+          />
         )}
 
         {activeTab === 'messages' && (
@@ -133,7 +139,10 @@ function AppContent() {
           <TransferTab />
         )}
         {activeTab === 'receiving' && (
-          <ReceivingTab onNavigateToCapacity={() => setActiveTab('capacity')} />
+          <ReceivingTab 
+            preSelectedReferral={preSelectedReceivingRef}
+            onNavigateToCapacity={() => setActiveTab('capacity')} 
+          />
         )}
         {activeTab === 'capacity' && (
           <CapacityPanel />

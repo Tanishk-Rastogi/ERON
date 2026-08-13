@@ -223,7 +223,7 @@ const DEMO_RECEIVING_REFERRALS = [
   }
 ];
 
-export function MainDashboard({ onNavigateToCriticalFind }) {
+export function MainDashboard({ onNavigateToCriticalFind, onRedirectToReceiving }) {
   const { referrals, isConnected, refreshAll, setLastNotification } = useWebSocket();
   const [selectedReferral, setSelectedReferral] = useState(null);
   const [activeSubTab, setActiveSubTab] = useState('sending');
@@ -231,6 +231,16 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingPacket, setLoadingPacket] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleAcceptReferral = (ref) => {
+    ref.status = 'ACCEPTED';
+    if (setLastNotification) {
+      setLastNotification({
+        type: 'success',
+        text: `✓ Referral #${ref.patientRefCode} accepted by City Super Specialty Hospital.`
+      });
+    }
+  };
 
   // Exclude 100% completed referrals from active queues so cards automatically remove when completed
   const activeReferrals = referrals.filter(r => r.status !== 'COMPLETED');
@@ -450,6 +460,15 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    {activeSubTab === 'receiving' && ref.status !== 'ACCEPTED' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleAcceptReferral(ref); }}
+                        className="eleven-button eleven-button-primary text-xs py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                      >
+                        ✓ Accept Request
+                      </button>
+                    )}
+
                     {isRerouting && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleOpenDetail(ref); }}
@@ -460,12 +479,19 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
                     )}
 
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleOpenDetail(ref); }}
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        if (activeSubTab === 'receiving' && onRedirectToReceiving) {
+                          onRedirectToReceiving(ref);
+                        } else {
+                          handleOpenDetail(ref);
+                        }
+                      }}
                       aria-label={`View detail for referral #${ref.patientRefCode}`}
-                      className="eleven-button eleven-button-secondary text-xs py-1.5 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
+                      className="eleven-button eleven-button-secondary text-xs py-1.5 px-3 font-bold focus-visible:outline-none"
                     >
                       <Eye className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>View Details</span>
+                      <span>{activeSubTab === 'receiving' ? 'View in Receiving Tab →' : 'View Details'}</span>
                     </button>
                   </div>
                 </div>
