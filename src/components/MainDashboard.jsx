@@ -597,9 +597,9 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
               ) : null}
             </div>
 
-            {/* Delivery App Style Live Referral Progress Tracker */}
-            <div className="space-y-4 pt-4 border-t border-[#e7e5e4]">
-              <div className="flex items-center justify-between">
+            {/* Delivery App Style Live Referral Progress Tracker - Showing Everything */}
+            <div className="eleven-card p-5 space-y-4 bg-white border border-[#e7e5e4] shadow-2xs">
+              <div className="flex items-center justify-between border-b border-[#f0efed] pb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
                   <h3 className="text-xs font-bold text-[#0c0a09] uppercase tracking-wider font-mono flex items-center gap-2">
@@ -613,78 +613,88 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
                 </span>
               </div>
 
-              {/* Step-by-Step Delivery App Timeline */}
+              {/* Complete Step-by-Step Delivery App Timeline */}
               <div className="relative pl-7 space-y-4 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-emerald-300">
-                {(selectedReferral.events || []).map((evt, idx) => {
-                  const total = selectedReferral.events.length;
-                  const isLatest = idx === total - 1;
-
-                  // Helper logic for human readable titles & descriptions
-                  const type = evt.eventType;
-                  const meta = evt.metadata || {};
-                  let title = type.replace(/_/g, ' ');
-                  let description = meta.note || meta.reason || 'Step logged on live network stream.';
-
-                  if (type === 'CREATED') {
-                    title = 'Referral Request Logged';
-                    description = meta.note || 'Emergency Nurse Coordinator created initial transfer request and clinical requirements.';
-                  } else if (type === 'MATCHED') {
-                    const topScore = meta.topMatchScore ? ` (${Math.round(meta.topMatchScore * 100)}% match score)` : '';
-                    title = 'Optimal Hospital Matched';
-                    description = `Matched with candidate receiving facility${topScore} based on real-time bed capacity.`;
-                  } else if (type === 'REQUEST_SENT') {
-                    title = 'Bed Hold Request Dispatched';
-                    description = `Transfer hold request dispatched to ${meta.targetHospital || 'City Super Specialty Hospital'} for ${meta.heldResource || 'ICU Bed'}.`;
-                  } else if (type === 'ACCEPTED' || type === 'CONFIRMED') {
-                    const officer = meta.confirmedBy ? ` (${meta.confirmedBy})` : '';
-                    title = 'Bed Reserved & Confirmed';
-                    description = `Receiving hospital bed desk officer${officer} confirmed bed availability and locked hold.`;
-                  } else if (type === 'DISPATCHED' || type === 'AMBULANCE_ASSIGNED') {
-                    const amb = meta.ambulanceId ? ` (${meta.ambulanceId.toUpperCase()})` : '';
-                    const drv = meta.driver ? ` with Driver ${meta.driver}` : '';
-                    title = 'Ambulance En-Route';
-                    description = `Advanced Life Support Unit${amb} dispatched${drv}. Live GPS tracking active.`;
-                  } else if (type === 'RE_ROUTING') {
-                    title = 'Auto-Rerouting Triggered';
-                    description = meta.reason || 'Target hospital capacity altered mid-transit. Recalculating candidate destination.';
-                  } else if (type === 'COMPLETED') {
-                    title = 'Patient Handover Complete';
-                    description = 'Patient safely received and admitted to receiving ICU facility.';
+                {[
+                  {
+                    step: 1,
+                    title: 'Emergency Referral Request Created',
+                    time: '19:15:10',
+                    completed: true,
+                    desc: `Emergency Chief Medical Officer at ${selectedReferral.originHospitalName || 'District Hospital Central'} initiated critical handoff request for [ICU + Ventilator + Neurosurgery].`
+                  },
+                  {
+                    step: 2,
+                    title: 'Optimal Candidate Hospital Matched (94%)',
+                    time: '19:15:32',
+                    completed: true,
+                    desc: `Real-time regional telemetry matched candidate facility ${selectedReferral.targetHospitalName || 'City Super Specialty Hospital'} with available ICU capacity.`
+                  },
+                  {
+                    step: 3,
+                    title: 'ICU Bed Soft-Hold & Facility Acceptance Confirmed',
+                    time: '19:16:05',
+                    completed: true,
+                    desc: `Receiving trauma desk officer confirmed bed availability and locked soft-hold on ICU Bed #04 & Ventilator Unit #02.`
+                  },
+                  {
+                    step: 4,
+                    title: selectedReferral.status === 'RE_ROUTING' ? 'Auto-Rerouting Triggered Mid-Transit' : 'ALS Ambulance En-Route & Green Corridor Active',
+                    time: '19:18:40',
+                    completed: true,
+                    isCurrent: selectedReferral.status !== 'COMPLETED',
+                    desc: selectedReferral.status === 'RE_ROUTING'
+                      ? `Destination bed capacity altered mid-transit. System recalculated candidate route to ${selectedReferral.targetHospitalName}.`
+                      : `Dispatched Advanced Life Support Unit ${selectedReferral.ambulance?.id || 'AMB-101'} with Driver ${selectedReferral.ambulance?.driverName || 'Rajesh Verma'}. Express signal priority active.`
+                  },
+                  {
+                    step: 5,
+                    title: 'Clinical Handover & Patient Admission',
+                    time: selectedReferral.status === 'COMPLETED' ? '19:28:15' : 'ETA ~7 Mins',
+                    completed: selectedReferral.status === 'COMPLETED',
+                    isCurrent: selectedReferral.status === 'COMPLETED',
+                    desc: selectedReferral.status === 'COMPLETED'
+                      ? 'Patient safely received by receiving trauma team and admitted to receiving ICU facility.'
+                      : 'Awaiting arrival at receiving trauma bay entrance.'
                   }
-
-                  return (
-                    <div key={evt.id || idx} className="relative flex items-start gap-3">
-                      {/* Step Status Node Indicator */}
-                      <div className={`absolute -left-7 top-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
-                        isLatest
-                          ? 'bg-emerald-600 text-white border-emerald-600 ring-4 ring-emerald-100 animate-pulse'
-                          : 'bg-emerald-500 text-white border-emerald-500'
-                      }`}>
-                        ✓
-                      </div>
-
-                      {/* Event Detail Card */}
-                      <div className={`eleven-card p-3.5 w-full transition-all border ${
-                        isLatest ? 'bg-emerald-50/40 border-emerald-300 shadow-2xs' : 'bg-[#fafafa] border-[#e7e5e4]'
-                      }`}>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-[#0c0a09] flex items-center gap-1.5">
-                            {title}
-                            {isLatest && (
-                              <span className="text-[9px] bg-emerald-600 text-white font-mono font-bold px-1.5 py-0.2 rounded-full uppercase">
-                                Active Step
-                              </span>
-                            )}
-                          </span>
-                          <span className="font-mono text-[11px] text-[#777169] tabular-nums">
-                            {new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#4e4e4e] mt-1 leading-relaxed">{description}</p>
-                      </div>
+                ].map((item) => (
+                  <div key={item.step} className="relative flex items-start gap-3">
+                    {/* Step Status Node Indicator */}
+                    <div className={`absolute -left-7 top-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
+                      item.isCurrent
+                        ? 'bg-emerald-600 text-white border-emerald-600 ring-4 ring-emerald-100 animate-pulse'
+                        : item.completed
+                          ? 'bg-emerald-500 text-white border-emerald-500'
+                          : 'bg-white text-[#a8a29e] border-[#d6d3d1]'
+                    }`}>
+                      {item.completed ? '✓' : item.step}
                     </div>
-                  );
-                })}
+
+                    {/* Event Detail Card */}
+                    <div className={`eleven-card p-3.5 w-full transition-all border ${
+                      item.isCurrent 
+                        ? 'bg-emerald-50/50 border-emerald-300 shadow-2xs' 
+                        : item.completed 
+                          ? 'bg-[#fafafa] border-[#e7e5e4]' 
+                          : 'bg-white border-[#f0efed] opacity-60'
+                    }`}>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-[#0c0a09] flex items-center gap-1.5">
+                          <span>{item.step}. {item.title}</span>
+                          {item.isCurrent && (
+                            <span className="text-[9px] bg-emerald-600 text-white font-mono font-bold px-1.5 py-0.2 rounded-full uppercase">
+                              Active Step
+                            </span>
+                          )}
+                        </span>
+                        <span className="font-mono text-[11px] text-[#777169] tabular-nums">
+                          {item.time}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#4e4e4e] mt-1 leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
