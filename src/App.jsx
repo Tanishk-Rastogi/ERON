@@ -128,9 +128,6 @@ function AppContent() {
           </div>
         )}
 
-        {activeTab === 'critical-find' && (
-          <CriticalFind onReferralCreated={() => setActiveTab('messages')} />
-        )}
         {activeTab === 'receiving' && (
           <ReceivingTab onNavigateToCapacity={() => setActiveTab('capacity')} />
         )}

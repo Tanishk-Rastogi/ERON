@@ -11,7 +11,6 @@ import {
 export function Header({ activeTab, setActiveTab, authSession, onLogout }) {
   const navItems = [
     { id: 'dashboard', label: 'Main Dashboard', icon: LayoutDashboard },
-    { id: 'critical-find', label: 'Critical Find', icon: Compass },
     { id: 'receiving', label: 'Receiving Tab', icon: Building2 },
     { id: 'capacity', label: 'Capacity Panel', icon: Bed }
   ];
