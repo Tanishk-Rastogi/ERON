@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WebSocketProvider, useWebSocket } from './context/WebSocketContext';
 import { Header } from './components/Header';
 import { MainDashboard } from './components/MainDashboard';
@@ -16,7 +16,7 @@ import { AuthPage } from './components/AuthPage';
 import { Bell, X, ShieldCheck } from 'lucide-react';
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('transfer');
   const [authSession, setAuthSession] = useState(() => {
     try {
       const saved = localStorage.getItem('eron_auth_session');
@@ -104,15 +104,6 @@ function AppContent() {
 
       {/* Main Screen Content Router */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
-        {activeTab === 'dashboard' && (
-          <MainDashboard 
-            onNavigateToCriticalFind={() => setActiveTab('critical-find')}
-            onRedirectToReceiving={(ref) => {
-              setPreSelectedReceivingRef(ref);
-              setActiveTab('receiving');
-            }}
-          />
-        )}
 
         {activeTab === 'messages' && (
           <div className="space-y-6">

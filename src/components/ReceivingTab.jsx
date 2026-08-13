@@ -236,8 +236,20 @@ function ReceivingLiveDeliveryMap({ referral, onOpenRadioModal }) {
         </div>
       </div>
 
-      {/* Leaflet OpenStreetMap Container */}
+      {/* Leaflet Uber/Delivery Style Map Container */}
       <div className="h-[440px] w-full relative flex-1">
+        {/* Floating Uber Delivery Style ETA Overlay Card */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-[#1c1917]/95 border border-[#292524] text-white px-5 py-2.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-3 font-mono text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+            <strong className="text-white font-sans text-sm">Arriving in {remainingMins} mins</strong>
+          </div>
+          <span className="text-[#383330]">|</span>
+          <span className="text-emerald-400 font-bold font-mono">{speed}</span>
+          <span className="text-[#383330]">|</span>
+          <span className="text-amber-400 font-bold">{progress}% Complete</span>
+        </div>
+
         <MapContainer
           center={[12.9550, 77.6100]}
           zoom={12}
@@ -247,11 +259,12 @@ function ReceivingLiveDeliveryMap({ referral, onOpenRadioModal }) {
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={19}
           />
 
           <Polyline
             positions={polylineCoords}
-            pathOptions={{ color: '#2563eb', weight: 5, opacity: 0.8, dashArray: '8, 8' }}
+            pathOptions={{ color: '#10b981', weight: 6, opacity: 0.95, dashArray: '6, 12' }}
           />
 
           <Marker position={originPos} icon={createHospitalIcon(originName.split(' ')[0], '#10b981')}>

@@ -13,11 +13,11 @@
 }
 
 .eleven-card {
-  @apply bg-white border border-[#e7e5e4] rounded-2xl shadow-sm transition-all duration-300 hover:border-[#a8a29e] hover:shadow-md;
+  @apply bg-white border border-[#e7e5e4] text-[#292524] rounded-2xl shadow-sm transition-all duration-300 hover:border-[#a8a29e] hover:shadow-md;
 }
 
 .eleven-panel {
-  @apply bg-[#ffffff]/90 backdrop-blur-md border border-[#e7e5e4] rounded-3xl shadow-sm;
+  @apply bg-[#ffffff]/90 backdrop-blur-md border border-[#e7e5e4] text-[#292524] rounded-3xl shadow-sm;
 }
 
 .eleven-pill {
