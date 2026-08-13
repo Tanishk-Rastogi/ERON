@@ -134,27 +134,23 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
           </div>
         ) : (
           displayedReferrals.map((ref) => {
-            const isCritical = ref.priority === 'CRITICAL';
             const isRerouting = ref.status === 'RE_ROUTING';
+            // Strip out " — Requires ..." suffix to leave pure clinical diagnosis
+            const cleanDiagnosis = ref.requirementSummary
+              ? ref.requirementSummary.split(' — ')[0].split(' - Requires')[0]
+              : ref.requirementSummary;
 
             return (
               <div
                 key={ref.id}
-                onClick={() => handleOpenDetail(ref)}
-                className={`eleven-card p-6 cursor-pointer space-y-4 group bg-white border transition-all hover:border-[#292524] ${
+                className={`eleven-card p-6 space-y-4 bg-white border transition-all ${
                   isRerouting ? 'border-amber-400 bg-amber-50/20' : 'border-[#e7e5e4]'
                 }`}
               >
-                {/* 1. Header Row: Priority + Patient Code + Status + Ambulance Unit */}
+                {/* 1. Header Row: Patient Code + Ambulance Unit */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f0efed] pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono tabular-nums text-xs font-bold text-[#777169]">#{ref.patientRefCode}</span>
-                    <span className={`eleven-badge font-bold font-mono text-xs ${
-                      isCritical ? 'bg-[#e8b8c4]/40 text-[#dc2626] border-[#e8b8c4]' : 'bg-[#f4c5a8]/40 text-[#d97706] border-[#f4c5a8]'
-                    }`}>
-                      {isCritical ? '🔴 CRITICAL PRIORITY' : '🟡 URGENT PRIORITY'}
-                    </span>
-                    {getStatusBadge(ref.status)}
+                    <span className="font-mono tabular-nums text-xs font-bold text-[#0c0a09]">#{ref.patientRefCode}</span>
                   </div>
 
                   {ref.ambulance && (
@@ -165,12 +161,12 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
                   )}
                 </div>
 
-                {/* 2. Patient Condition / Diagnosis (What's wrong with the patient?) */}
-                <h3 className="text-base font-bold text-[#0c0a09] leading-snug group-hover:text-[#2563eb] transition-colors">
-                  {ref.requirementSummary}
+                {/* 2. Patient Diagnosis / Condition */}
+                <h3 className="text-base font-bold text-[#0c0a09] leading-snug">
+                  {cleanDiagnosis}
                 </h3>
 
-                {/* 3. Required Resources Chips (What resource is needed?) */}
+                {/* 3. Required Resources Chips (Uniform color) */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-mono font-bold text-[#777169] uppercase tracking-wider block">
                     Required Resources:
@@ -182,7 +178,7 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
                       </span>
                     ))}
                     {(ref.requiredCapabilities || ['NEUROSURGERY', 'CT_SCAN']).map((c, i) => (
-                      <span key={`cap-${i}`} className="px-2.5 py-1 rounded-xl bg-[#a8c8e8]/30 text-[#0c0a09] border border-[#a8c8e8] font-mono text-xs font-bold shadow-2xs">
+                      <span key={`cap-${i}`} className="px-2.5 py-1 rounded-xl bg-[#292524] text-white font-mono text-xs font-bold shadow-2xs">
                         [{c.replace('_', ' ')}]
                       </span>
                     ))}
