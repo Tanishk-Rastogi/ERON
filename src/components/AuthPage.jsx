@@ -4,7 +4,7 @@ import { KeyRound, ArrowRight, Lock, AlertCircle } from 'lucide-react';
 
 export function AuthPage({ onLoginSuccess }) {
   const [hospitalName, setHospitalName] = useState('St. Jude Trauma Center');
-  const [hospitalCode, setHospitalCode] = useState('STJUDE-99');
+  const [hospitalCode, setHospitalCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -19,17 +19,14 @@ export function AuthPage({ onLoginSuccess }) {
       return;
     }
 
-    if (!hospitalCode.trim()) {
-      setError('Please enter your hospital authorization code.');
-      return;
-    }
+    const finalCode = hospitalCode.trim() || 'HOSP-PASS';
 
     setLoading(true);
 
     setTimeout(() => {
       const authData = {
         hospitalName: finalHospitalName,
-        hospitalCode: hospitalCode.trim(),
+        hospitalCode: finalCode,
         roleDesk: 'Emergency Referral Officer',
         loginTime: new Date().toISOString()
       };
@@ -102,10 +99,10 @@ export function AuthPage({ onLoginSuccess }) {
                 <input
                   id="hospital-code-input"
                   type="text"
-                  placeholder="Enter passcode e.g. STJUDE-99"
+                  placeholder="Enter hospital passcode"
                   value={hospitalCode}
                   onChange={(e) => setHospitalCode(e.target.value)}
-                  className="w-full bg-[#fafafa] border border-[#e7e5e4] rounded-2xl p-3 text-[#0c0a09] font-mono tracking-wider font-bold uppercase focus:outline-none focus:border-[#292524] focus:bg-white transition-all"
+                  className="w-full bg-[#fafafa] border border-[#e7e5e4] rounded-2xl p-3 text-[#292524] font-medium focus:outline-none focus:border-[#292524] focus:bg-white transition-all"
                 />
                 <KeyRound className="w-4 h-4 text-[#777169] absolute right-3.5 top-3.5 pointer-events-none" />
               </div>
