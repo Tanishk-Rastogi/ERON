@@ -257,7 +257,6 @@ export function ReceivingTab({ preSelectedReferral, onNavigateToCapacity }) {
 
   const displayedIncomingReferrals = realIncomingReferrals.length > 0 ? realIncomingReferrals : DEMO_INCOMING_REFERRALS;
 
-<<<<<<< HEAD
   // Initialize selected referral from preSelectedReferral or default to first incoming
   useEffect(() => {
     if (preSelectedReferral) {
