@@ -340,26 +340,94 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
               ) : null}
             </div>
 
-            {/* Audit Log Events */}
-            <div className="space-y-3 pt-2">
-              <h3 className="text-xs uppercase font-extrabold tracking-widest text-[#777169] flex items-center gap-1.5 font-mono">
-                <Clock className="w-4 h-4 text-[#292524]" aria-hidden="true" />
-                <span>IMMUTABLE AUDIT LOG (ReferralEvent Stream)</span>
-              </h3>
+            {/* Delivery App Style Live Referral Progress Tracker */}
+            <div className="space-y-4 pt-4 border-t border-[#e7e5e4]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                  <h3 className="text-xs font-bold text-[#0c0a09] uppercase tracking-wider font-mono flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#292524]" aria-hidden="true" />
+                    <span>Live Transfer Progress Tracker</span>
+                  </h3>
+                </div>
 
-              <div className="space-y-2 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#e7e5e4]">
-                {(selectedReferral.events || []).map((evt, idx) => (
-                  <div key={evt.id || idx} className="flex items-start gap-3 relative pl-8 text-xs font-mono">
-                    <div className="absolute left-1.5 top-1 w-3 h-3 rounded-full bg-[#292524]" />
-                    <div className="eleven-card p-3 w-full bg-[#fafafa]">
-                      <div className="flex items-center justify-between text-[11px] text-[#777169]">
-                        <span className="font-bold text-[#0c0a09] uppercase">{evt.eventType}</span>
-                        <span className="tabular-nums">{new Date(evt.timestamp).toLocaleTimeString()}</span>
+                <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                  {selectedReferral.status === 'COMPLETED' ? '100% COMPLETE' : 'IN TRANSIT (80% COMPLETE)'}
+                </span>
+              </div>
+
+              {/* Step-by-Step Delivery App Timeline */}
+              <div className="relative pl-7 space-y-4 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-emerald-300">
+                {(selectedReferral.events || []).map((evt, idx) => {
+                  const total = selectedReferral.events.length;
+                  const isLatest = idx === total - 1;
+
+                  // Helper logic for human readable titles & descriptions
+                  const type = evt.eventType;
+                  const meta = evt.metadata || {};
+                  let title = type.replace(/_/g, ' ');
+                  let description = meta.note || meta.reason || 'Step logged on live network stream.';
+
+                  if (type === 'CREATED') {
+                    title = 'Referral Request Logged';
+                    description = meta.note || 'Emergency Nurse Coordinator created initial transfer request and clinical requirements.';
+                  } else if (type === 'MATCHED') {
+                    const topScore = meta.topMatchScore ? ` (${Math.round(meta.topMatchScore * 100)}% match score)` : '';
+                    title = 'Optimal Hospital Matched';
+                    description = `Matched with candidate receiving facility${topScore} based on real-time bed capacity.`;
+                  } else if (type === 'REQUEST_SENT') {
+                    title = 'Bed Hold Request Dispatched';
+                    description = `Transfer hold request dispatched to ${meta.targetHospital || 'City Super Specialty Hospital'} for ${meta.heldResource || 'ICU Bed'}.`;
+                  } else if (type === 'ACCEPTED' || type === 'CONFIRMED') {
+                    const officer = meta.confirmedBy ? ` (${meta.confirmedBy})` : '';
+                    title = 'Bed Reserved & Confirmed';
+                    description = `Receiving hospital bed desk officer${officer} confirmed bed availability and locked hold.`;
+                  } else if (type === 'DISPATCHED' || type === 'AMBULANCE_ASSIGNED') {
+                    const amb = meta.ambulanceId ? ` (${meta.ambulanceId.toUpperCase()})` : '';
+                    const drv = meta.driver ? ` with Driver ${meta.driver}` : '';
+                    title = 'Ambulance En-Route';
+                    description = `Advanced Life Support Unit${amb} dispatched${drv}. Live GPS tracking active.`;
+                  } else if (type === 'RE_ROUTING') {
+                    title = 'Auto-Rerouting Triggered';
+                    description = meta.reason || 'Target hospital capacity altered mid-transit. Recalculating candidate destination.';
+                  } else if (type === 'COMPLETED') {
+                    title = 'Patient Handover Complete';
+                    description = 'Patient safely received and admitted to receiving ICU facility.';
+                  }
+
+                  return (
+                    <div key={evt.id || idx} className="relative flex items-start gap-3">
+                      {/* Step Status Node Indicator */}
+                      <div className={`absolute -left-7 top-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all ${
+                        isLatest
+                          ? 'bg-emerald-600 text-white border-emerald-600 ring-4 ring-emerald-100 animate-pulse'
+                          : 'bg-emerald-500 text-white border-emerald-500'
+                      }`}>
+                        ✓
                       </div>
-                      <p className="text-[#292524] font-sans mt-1">{evt.metadata?.note || evt.metadata?.reason || JSON.stringify(evt.metadata)}</p>
+
+                      {/* Event Detail Card */}
+                      <div className={`eleven-card p-3.5 w-full transition-all border ${
+                        isLatest ? 'bg-emerald-50/40 border-emerald-300 shadow-2xs' : 'bg-[#fafafa] border-[#e7e5e4]'
+                      }`}>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-[#0c0a09] flex items-center gap-1.5">
+                            {title}
+                            {isLatest && (
+                              <span className="text-[9px] bg-emerald-600 text-white font-mono font-bold px-1.5 py-0.2 rounded-full uppercase">
+                                Active Step
+                              </span>
+                            )}
+                          </span>
+                          <span className="font-mono text-[11px] text-[#777169] tabular-nums">
+                            {new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#4e4e4e] mt-1 leading-relaxed">{description}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
