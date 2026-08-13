@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Check, MapPin, Phone, Building2, Navigation, ShieldCheck, X, ChevronRight, Layers } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import { Search, Check, MapPin, Phone, Building2, Navigation, ShieldCheck, X, ChevronRight, Layers, Maximize2, Locate, Eye } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -141,6 +141,19 @@ const HOSPITALS_MAP_DATA = [
   }
 ];
 
+// Inner Leaflet component for smooth flying/bounding navigation
+function MapFlyToController({ targetPos, targetZoom, targetBounds }) {
+  const map = useMap();
+  useEffect(() => {
+    if (targetBounds) {
+      map.fitBounds(targetBounds, { padding: [40, 40] });
+    } else if (targetPos) {
+      map.flyTo(targetPos, targetZoom || 13, { duration: 0.8 });
+    }
+  }, [targetPos, targetZoom, targetBounds, map]);
+  return null;
+}
+
 // Custom Google Maps Location Pin Marker with Medical Cross (+) Sign
 const createGoogleMapsPinIcon = (code, color, isMatch) => {
   return L.divIcon({
@@ -210,6 +223,13 @@ export function TransferTab() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [detailHospitalModal, setDetailHospitalModal] = useState(null);
+  
+  // Navigation map target state
+  const [mapTargetPos, setMapTargetPos] = useState([12.9716, 77.6100]);
+  const [mapTargetZoom, setMapTargetZoom] = useState(12);
+  const [mapTargetBounds, setMapTargetBounds] = useState(null);
+  const [enableWheelZoom, setEnableWheelZoom] = useState(false);
+
   const searchContainerRef = useRef(null);
 
   // Filter master resources based on searchQuery
@@ -283,6 +303,17 @@ export function TransferTab() {
     }
   };
 
+  const handleFocusHospitalOnMap = (hosp) => {
+    setMapTargetBounds(null);
+    setMapTargetPos([hosp.lat, hosp.lng]);
+    setMapTargetZoom(14);
+  };
+
+  const handleFitAllHospitalsOnMap = () => {
+    const bounds = L.latLngBounds(HOSPITALS_MAP_DATA.map(h => [h.lat, h.lng]));
+    setMapTargetBounds(bounds);
+  };
+
   const routePolyline = [
     [12.9716, 77.5946], // Hosp A
     [12.9550, 77.6100], // Waypoint
@@ -290,7 +321,7 @@ export function TransferTab() {
   ];
 
   return (
-    <div className="space-y-6 font-sans max-w-5xl mx-auto pt-4">
+    <div className="min-h-screen space-y-8 font-sans max-w-5xl mx-auto pt-4 pb-32">
       {/* Prominent Multi-Select Search Bar */}
       <div ref={searchContainerRef} className="w-full relative">
         <div className="w-full bg-white border border-[#d6d3d1] rounded-2xl p-2.5 pl-11 pr-20 min-h-[58px] flex flex-wrap items-center gap-2 focus-within:border-[#292524] focus-within:ring-2 focus-within:ring-[#292524]/20 transition-all shadow-sm hover:shadow-md relative">
@@ -430,7 +461,7 @@ export function TransferTab() {
               <span>Real-Time Hospital & Regional Transfer Network Map</span>
             </h2>
             <p className="text-xs text-[#777169] font-light">
-              Single-tap pin for distance & popup. Double-tap pin to open full hospital resource details.
+              Use quick focus buttons below to navigate map smoothly without page scroll lock.
             </p>
           </div>
 
@@ -447,14 +478,60 @@ export function TransferTab() {
           </div>
         </div>
 
+        {/* Map Ergonomic Navigation Toolbar */}
+        <div className="p-3 bg-[#f5f5f5] border-b border-[#e7e5e4] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] text-[#777169] uppercase font-bold mr-1">Quick Focus:</span>
+            
+            <button
+              onClick={handleFitAllHospitalsOnMap}
+              className="px-2.5 py-1 bg-white border border-[#e7e5e4] rounded-lg hover:bg-[#292524] hover:text-white transition-all text-[11px] font-semibold shadow-2xs flex items-center gap-1"
+            >
+              <Maximize2 className="w-3 h-3" /> Fit All (4)
+            </button>
+
+            {HOSPITALS_MAP_DATA.map(hosp => (
+              <button
+                key={hosp.id}
+                onClick={() => handleFocusHospitalOnMap(hosp)}
+                className="px-2.5 py-1 bg-white border rounded-lg hover:bg-[#292524] hover:text-white transition-all text-[11px] font-semibold shadow-2xs flex items-center gap-1 text-[#292524]"
+                style={{ borderColor: hosp.color + '60' }}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: hosp.color }}></span>
+                {hosp.code}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setEnableWheelZoom(!enableWheelZoom)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all flex items-center gap-1 ${
+                enableWheelZoom 
+                  ? 'bg-emerald-600 text-white border-emerald-600' 
+                  : 'bg-white text-[#777169] border-[#e7e5e4] hover:text-[#0c0a09]'
+              }`}
+              title="Toggle mouse scroll wheel zoom"
+            >
+              <span>{enableWheelZoom ? 'Wheel Zoom: ON' : 'Wheel Zoom: OFF (Scroll Safe)'}</span>
+            </button>
+          </div>
+        </div>
+
         {/* Leaflet OpenStreetMap View */}
         <div className="h-[480px] w-full relative z-10">
           <MapContainer
             center={[12.9716, 77.6100]}
             zoom={12}
-            scrollWheelZoom={true}
+            scrollWheelZoom={enableWheelZoom}
             style={{ height: '100%', width: '100%' }}
           >
+            <MapFlyToController 
+              targetPos={mapTargetPos} 
+              targetZoom={mapTargetZoom} 
+              targetBounds={mapTargetBounds} 
+            />
+
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -535,7 +612,81 @@ export function TransferTab() {
         </div>
       </div>
 
-      {/* Hospital Full Details Modal (Double-Click / Details Trigger) */}
+      {/* Hospital Network Summary List Cards (Big Scroll Page Section) */}
+      <div className="space-y-4 pt-4 border-t border-[#e7e5e4]">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-[#0c0a09] flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-[#292524]" />
+              <span>Regional Hospital Directory ({filteredHospitals.length})</span>
+            </h3>
+            <p className="text-xs text-[#777169]">
+              Scroll down to inspect individual hospital capacity or focus directly on map.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredHospitals.map(hosp => (
+            <div 
+              key={hosp.id} 
+              className={`eleven-card p-5 space-y-3 bg-white border transition-all ${
+                hosp.isMatch ? 'border-[#e7e5e4] hover:border-[#292524]' : 'border-red-200 bg-red-50/30 opacity-75'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border" style={{ color: hosp.color, borderColor: hosp.color + '40', backgroundColor: hosp.color + '15' }}>
+                    {hosp.statusText}
+                  </span>
+                  <h4 className="font-bold text-[#0c0a09] text-base mt-1">{hosp.name}</h4>
+                  <p className="text-xs text-[#777169]">{hosp.address}</p>
+                </div>
+
+                <div className="text-right font-mono flex-shrink-0">
+                  <span className="text-xs text-[#777169] block">Distance:</span>
+                  <strong className="text-sm text-[#0c0a09]">
+                    {hosp.distanceKm === '0.0' ? 'Origin' : `${hosp.distanceKm} km`}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Bed Availability Badges */}
+              <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-[#fafafa] p-2.5 rounded-xl border border-[#f0efed]">
+                <div>
+                  <span className="text-[10px] text-[#777169] block font-sans">ICU Beds:</span>
+                  <strong className="text-emerald-700">{hosp.resources.find(r=>r.name==='ICU')?.available || 0} Available</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#777169] block font-sans">Ventilators:</span>
+                  <strong className="text-blue-700">{hosp.resources.find(r=>r.name==='Ventilator')?.available || 0} Available</strong>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#f0efed]">
+                <button
+                  onClick={() => handleFocusHospitalOnMap(hosp)}
+                  className="eleven-button eleven-button-secondary text-xs py-1.5 px-3 font-semibold flex items-center gap-1"
+                >
+                  <Locate className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Focus Map</span>
+                </button>
+
+                <button
+                  onClick={() => setDetailHospitalModal(hosp)}
+                  className="eleven-button eleven-button-primary text-xs py-1.5 px-3 font-semibold flex items-center gap-1"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>View Details</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Hospital Full Details Modal */}
       {detailHospitalModal && (
         <div 
           className="fixed inset-0 z-50 bg-[#0c0a09]/50 backdrop-blur-xs flex items-center justify-center p-4"
