@@ -158,8 +158,8 @@ function AppContent() {
             <div className="flex items-center justify-between border-b border-[#e7e5e4] pb-3">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                <h2 className="text-sm font-bold text-[#0c0a09] font-mono">
-                  AES-256 Decrypted Clinical Handoff Packet (#PAT-2026-8941)
+                <h2 className="text-sm font-bold text-[#0c0a09]">
+                  Clinical Handoff Packet (#PAT-2026-8941)
                 </h2>
               </div>
 

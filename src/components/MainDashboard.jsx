@@ -247,12 +247,14 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
             <div className="flex items-center justify-between border-b border-[#e7e5e4] pb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 id="modal-title" className="text-lg font-light text-[#0c0a09]">Referral Telemetry & Packet</h2>
+                  <h2 id="modal-title" className="text-lg font-light text-[#0c0a09]">Referral Details</h2>
                   <span className="font-mono tabular-nums text-xs text-[#292524] bg-[#f5f5f5] border border-[#e7e5e4] px-2 py-0.5 rounded-full">
                     #{selectedReferral.patientRefCode}
                   </span>
                 </div>
-                <p className="text-xs text-[#777169] mt-0.5">{selectedReferral.requirementSummary}</p>
+                <p className="text-xs text-[#777169] mt-0.5">
+                  {selectedReferral.requirementSummary ? selectedReferral.requirementSummary.split(' — ')[0].split(' - Requires')[0] : ''}
+                </p>
               </div>
 
               <button
@@ -294,10 +296,6 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
 
             {/* Decrypted Clinical Packet */}
             <div className="space-y-3">
-              <h3 className="text-xs uppercase font-extrabold tracking-widest text-[#777169] flex items-center gap-1.5 font-mono">
-                <ShieldCheck className="w-4 h-4 text-[#16a34a]" aria-hidden="true" />
-                <span>AES-256 ENCRYPTED CLINICAL HANDOFF PACKET</span>
-              </h3>
 
               {loadingPacket ? (
                 <div className="eleven-card p-6 text-center text-xs text-[#777169]" role="status" aria-live="polite">
