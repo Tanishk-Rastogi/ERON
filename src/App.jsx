@@ -40,6 +40,7 @@ function AppContent() {
   const [decryptedPacketData, setDecryptedPacketData] = useState(null);
   const [loadingPacket, setLoadingPacket] = useState(false);
 
+  const { lastNotification, setLastNotification } = useWebSocket();
   const [preSelectedReceivingRef, setPreSelectedReceivingRef] = useState(null);
 
   const handleLogout = () => {
