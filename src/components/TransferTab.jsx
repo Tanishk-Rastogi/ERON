@@ -213,6 +213,7 @@ const createGoogleMapsPinIcon = (name, color, isMatch) => {
 };
 
 export function TransferTab() {
+  const [hospitalsList, setHospitalsList] = useState(HOSPITALS_MAP_DATA);
   const [selectedTags, setSelectedTags] = useState(['ICU', 'Ventilator']);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -227,6 +228,25 @@ export function TransferTab() {
 
   const searchContainerRef = useRef(null);
 
+  const handleToggleIcuCapacity = (hospId) => {
+    setHospitalsList(prev => prev.map(h => {
+      if (h.id !== hospId) return h;
+      const icuRes = h.resources.find(r => r.name === 'ICU');
+      const isCurrentlyFull = icuRes ? icuRes.available === 0 : false;
+      const newAvailable = isCurrentlyFull ? 12 : 0;
+
+      const updatedResources = h.resources.map(r => 
+        r.name === 'ICU' ? { ...r, available: newAvailable } : r
+      );
+      const updatedHosp = { ...h, resources: updatedResources };
+
+      if (detailHospitalModal && detailHospitalModal.id === hospId) {
+        setDetailHospitalModal(updatedHosp);
+      }
+      return updatedHosp;
+    }));
+  };
+
   // Filter master resources based on searchQuery
   const filteredSuggestions = searchQuery.trim()
     ? MASTER_RESOURCES.filter(r => 
@@ -236,7 +256,7 @@ export function TransferTab() {
     : MASTER_RESOURCES;
 
   // Real-time map hospital filtering based on selected filter tags
-  const filteredHospitals = HOSPITALS_MAP_DATA.map(h => {
+  const filteredHospitals = hospitalsList.map(h => {
     const hasAllSelectedTags = selectedTags.every(tag => {
       const res = h.resources.find(r => r.name.toLowerCase() === tag.toLowerCase());
       return res && res.available > 0;
@@ -627,10 +647,14 @@ export function TransferTab() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="text-[11px] font-mono text-[#777169] flex items-center gap-1">
-                    <Phone className="w-3 h-3 text-[#292524]" /> {hosp.phone}
-                  </span>
+                <div className="flex items-center justify-between pt-1 text-xs gap-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleToggleIcuCapacity(hosp.id); }}
+                    className="text-[10px] font-mono font-bold px-2 py-1 rounded-md bg-[#fafafa] hover:bg-amber-100 text-[#292524] border border-[#e7e5e4] transition-all"
+                    title="Simulate capacity state shift live on map"
+                  >
+                    ⚡ {hosp.resources.find(r=>r.name==='ICU')?.available === 0 ? 'Restore ICU' : 'Mark ICU Full'}
+                  </button>
 
                   <button
                     onClick={(e) => { e.stopPropagation(); setDetailHospitalModal(hosp); }}
