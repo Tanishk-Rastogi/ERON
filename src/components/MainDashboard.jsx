@@ -140,8 +140,11 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
   const [loadingPacket, setLoadingPacket] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const sendingReferrals = referrals.filter(r => r.originHospitalId === 'hosp-a' || r.originHospitalId === 'hosp-d');
-  const receivingReferrals = referrals.filter(r => r.targetHospitalId === 'hosp-b' || r.targetHospitalId === 'hosp-c');
+  // Exclude 100% completed referrals from active queues so cards automatically remove when completed
+  const activeReferrals = referrals.filter(r => r.status !== 'COMPLETED');
+
+  const sendingReferrals = activeReferrals.filter(r => r.originHospitalId === 'hosp-a' || r.originHospitalId === 'hosp-d');
+  const receivingReferrals = activeReferrals.filter(r => r.targetHospitalId === 'hosp-b' || r.targetHospitalId === 'hosp-c');
 
   const displayedReferrals = activeSubTab === 'sending' ? sendingReferrals : receivingReferrals;
 
@@ -149,6 +152,20 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
     setIsRefreshing(true);
     refreshAll();
     setTimeout(() => setIsRefreshing(false), 600);
+  };
+
+  const handleCompleteHandover = async (refId) => {
+    try {
+      await fetch(`/api/referrals/${refId}/handover`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffId: 'nurse-a' })
+      });
+      setSelectedReferral(null);
+      refreshAll();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleOpenDetail = async (ref) => {
@@ -373,13 +390,23 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
                 </p>
               </div>
 
-              <button
-                onClick={() => setSelectedReferral(null)}
-                aria-label="Close modal"
-                className="eleven-button eleven-button-secondary text-xs py-1.5 px-3.5 font-bold shadow-xs hover:bg-[#292524] hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
-              >
-                ✕ Close
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleCompleteHandover(selectedReferral.id)}
+                  aria-label="Complete clinical handover"
+                  className="eleven-button eleven-button-primary text-xs py-1.5 px-3 font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+                >
+                  ✓ Complete Handover (100%)
+                </button>
+
+                <button
+                  onClick={() => setSelectedReferral(null)}
+                  aria-label="Close modal"
+                  className="eleven-button eleven-button-secondary text-xs py-1.5 px-3.5 font-bold shadow-xs hover:bg-[#292524] hover:text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
+                >
+                  ✕ Close
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Modal Content Container */}
