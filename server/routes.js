@@ -458,7 +458,9 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 17. POST /api/demo/reset - Resets the in-memory database to seed state
-  router.post('/demo/reset', (req, res) => {
+  router.post('/demo/reset', (req, res) => { db.seed(); res.json({ success: true, message: 'Database reset to seed state.' }); });
+
+  router.get('/demo/reset', (req, res) => {
     db.seed();
     res.json({ success: true, message: 'Database reset to seed state.' });
   });
