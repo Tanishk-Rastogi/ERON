@@ -254,28 +254,7 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0 w-full sm:w-auto">
-          {/* Search Input Bar */}
-          <div className="relative flex-1 sm:w-64">
-            <input
-              type="text"
-              placeholder="Search referrals by ID, patient, hospital..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-[#e7e5e4] rounded-full py-1.5 pl-9 pr-7 text-xs text-[#292524] placeholder-[#a8a29e] focus:outline-none focus:border-[#292524] focus:ring-1 focus:ring-[#292524] transition-all shadow-2xs"
-            />
-            <Search className="w-3.5 h-3.5 text-[#777169] absolute left-3 top-2.5 pointer-events-none" />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-2 text-xs text-[#a8a29e] hover:text-[#0c0a09]"
-                title="Clear search"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
+        <div className="flex items-center gap-3 flex-shrink-0">
           <button
             onClick={handleRefresh}
             aria-label="Refresh referral queue data"
