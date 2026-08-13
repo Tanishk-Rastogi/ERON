@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LogoIcon } from './LogoIcon';
-import { KeyRound, ArrowRight, Lock, AlertCircle } from 'lucide-react';
+import { KeyRound, ArrowRight, AlertCircle } from 'lucide-react';
 
 export function AuthPage({ onLoginSuccess }) {
   const [hospitalName, setHospitalName] = useState('St. Jude Trauma Center');
@@ -59,13 +59,6 @@ export function AuthPage({ onLoginSuccess }) {
 
         {/* Clean Auth Form Card */}
         <div className="eleven-card p-8 bg-white border-[#e7e5e4] shadow-sm space-y-6">
-          <div className="flex items-center gap-2 border-b border-[#f0efed] pb-3">
-            <Lock className="w-4 h-4 text-[#292524]" aria-hidden="true" />
-            <h2 className="text-sm font-semibold text-[#0c0a09]">
-              Hospital Authorization
-            </h2>
-          </div>
-
           {error && (
             <div className="p-3 rounded-2xl bg-[#e8b8c4]/30 border border-[#e8b8c4] text-[#dc2626] text-xs flex items-center gap-2" role="alert">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -118,18 +111,13 @@ export function AuthPage({ onLoginSuccess }) {
                 <span>Authenticating...</span>
               ) : (
                 <>
-                  <span>Enter Hospital Control System</span>
+                  <span>Enter</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
         </div>
-
-        {/* Footer Note */}
-        <p className="text-[11px] text-center text-[#777169] font-light">
-          Authorized hospital personnel only. All access attempts are logged under audit streams.
-        </p>
       </div>
     </div>
   );
