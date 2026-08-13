@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { apiClient } from './utils/apiClient.js';
+import { apiClient } from '../utils/apiClient.js';
 
 const WebSocketContext = createContext(null);
 
