@@ -412,5 +412,49 @@ export function createApiRouter(broadcastFn) {
     });
   });
 
+  // 15. GET /api/threads — Fetch all messaging channels/threads
+  router.get('/threads', (req, res) => {
+    res.json(db.getThreads());
+  });
+
+  // 16. GET /api/messages — Fetch messages for threadId
+  router.get('/messages', (req, res) => {
+    const threadId = req.query.threadId;
+    const msgs = db.getMessages(threadId);
+    res.json(msgs);
+  });
+
+  // 17. POST /api/messages — Send chat/template message
+  router.post('/messages', (req, res) => {
+    const newMsg = db.addMessage(req.body);
+
+    if (broadcastFn) {
+      broadcastFn({
+        type: 'CHAT_MESSAGE_RECEIVED',
+        message: newMsg,
+        threadId: newMsg.threadId
+      });
+    }
+
+    res.status(201).json(newMsg);
+  });
+
+  // 18. POST /api/messages/read — Mark thread messages as read
+  router.post('/messages/read', (req, res) => {
+    const { threadId, userId } = req.body;
+    const result = db.markMessagesRead(threadId, userId);
+
+    if (broadcastFn) {
+      broadcastFn({
+        type: 'MESSAGES_READ',
+        threadId,
+        readByUserId: userId,
+        readAt: new Date().toISOString()
+      });
+    }
+
+    res.json(result);
+  });
+
   return router;
 }

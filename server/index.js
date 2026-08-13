@@ -60,6 +60,39 @@ wss.on('connection', (ws) => {
           });
         }
       }
+
+      // Handle Typing Indicators over WebSocket
+      if (data.type === 'TYPING_INDICATOR') {
+        broadcast({
+          type: 'TYPING_INDICATOR',
+          threadId: data.threadId,
+          userId: data.userId,
+          userName: data.userName,
+          userRole: data.userRole,
+          isTyping: data.isTyping
+        });
+      }
+
+      // Handle Direct Chat Messages over WebSocket
+      if (data.type === 'SEND_CHAT_MESSAGE') {
+        const newMsg = db.addMessage(data.messageData);
+        broadcast({
+          type: 'CHAT_MESSAGE_RECEIVED',
+          message: newMsg,
+          threadId: newMsg.threadId
+        });
+      }
+
+      // Handle Read Receipts over WebSocket
+      if (data.type === 'MARK_READ') {
+        const result = db.markMessagesRead(data.threadId, data.userId);
+        broadcast({
+          type: 'MESSAGES_READ',
+          threadId: data.threadId,
+          userId: data.userId,
+          readAt: new Date().toISOString()
+        });
+      }
     } catch (err) {
       console.error('[WebSocket Message Error]:', err);
     }

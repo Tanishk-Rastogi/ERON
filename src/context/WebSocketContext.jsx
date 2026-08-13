@@ -6,23 +6,25 @@ export function WebSocketProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false);
   const [hospitals, setHospitals] = useState([]);
   const [referrals, setReferrals] = useState([]);
+  const [threads, setThreads] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [typingUsers, setTypingUsers] = useState({}); // { threadId: { userName, userRole } }
   const [lastNotification, setLastNotification] = useState(null);
   const wsRef = useRef(null);
 
   const fetchInitialData = async () => {
     try {
-      const [hospRes, refRes] = await Promise.all([
+      const [hospRes, refRes, threadsRes, msgRes] = await Promise.all([
         fetch('/api/hospitals'),
-        fetch('/api/referrals')
+        fetch('/api/referrals'),
+        fetch('/api/threads'),
+        fetch('/api/messages')
       ]);
-      if (hospRes.ok) {
-        const data = await hospRes.json();
-        setHospitals(data);
-      }
-      if (refRes.ok) {
-        const data = await refRes.json();
-        setReferrals(data);
-      }
+
+      if (hospRes.ok) setHospitals(await hospRes.json());
+      if (refRes.ok) setReferrals(await refRes.json());
+      if (threadsRes.ok) setThreads(await threadsRes.json());
+      if (msgRes.ok) setMessages(await msgRes.json());
     } catch (err) {
       console.error('API initial fetch error:', err);
     }
@@ -43,7 +45,6 @@ export function WebSocketProvider({ children }) {
         ws = new WebSocket(`${protocol}//${window.location.hostname}:3001`);
       }
       wsRef.current = ws;
-
 
       ws.onopen = () => {
         setIsConnected(true);
@@ -69,14 +70,12 @@ export function WebSocketProvider({ children }) {
               }
               return h;
             }));
-          } else if (msg.type === 'REFERRAL_CREATED' || msg.type === 'REFERRAL_ACCEPTED' || msg.type === 'AMBULANCE_DISPATCHED' || msg.type === 'REFERRAL_COMPLETED') {
+          } else if (['REFERRAL_CREATED', 'REFERRAL_ACCEPTED', 'AMBULANCE_DISPATCHED', 'REFERRAL_COMPLETED'].includes(msg.type)) {
             setReferrals(prev => {
               const exists = prev.some(r => r.id === msg.referral.id);
-              if (exists) {
-                return prev.map(r => r.id === msg.referral.id ? msg.referral : r);
-              } else {
-                return [msg.referral, ...prev];
-              }
+              return exists 
+                ? prev.map(r => r.id === msg.referral.id ? msg.referral : r)
+                : [msg.referral, ...prev];
             });
             if (msg.message) setLastNotification({ id: Date.now(), text: msg.message, type: 'info' });
           } else if (msg.type === 'REFERRAL_REROUTING') {
@@ -85,9 +84,33 @@ export function WebSocketProvider({ children }) {
           } else if (msg.type === 'REFERRAL_REROUTED') {
             setReferrals(prev => prev.map(r => r.id === msg.referralId ? msg.referral : r));
             if (msg.message) setLastNotification({ id: Date.now(), text: msg.message, type: 'success' });
-          } else if (msg.type === 'REROUTE_ESCALATED') {
+          } else if (msg.type === 'REFERRAL_ESCALATED') {
             setReferrals(prev => prev.map(r => r.id === msg.referralId ? msg.referral : r));
             if (msg.message) setLastNotification({ id: Date.now(), text: msg.message, type: 'error' });
+          } else if (msg.type === 'CHAT_MESSAGE_RECEIVED') {
+            setMessages(prev => {
+              const exists = prev.some(m => m.id === msg.message.id);
+              return exists ? prev : [...prev, msg.message];
+            });
+
+            // Update thread lastMessage
+            setThreads(prev => prev.map(t => {
+              if (t.id === msg.threadId) {
+                return {
+                  ...t,
+                  lastMessageText: msg.message.text,
+                  lastMessageAt: msg.message.createdAt
+                };
+              }
+              return t;
+            }));
+          } else if (msg.type === 'TYPING_INDICATOR') {
+            setTypingUsers(prev => ({
+              ...prev,
+              [msg.threadId]: msg.isTyping ? { userName: msg.userName, userRole: msg.userRole } : null
+            }));
+          } else if (msg.type === 'MESSAGES_READ') {
+            setMessages(prev => prev.map(m => m.threadId === msg.threadId ? { ...m, status: 'READ' } : m));
           }
         } catch (err) {
           console.error('[WS Parse Error]:', err);
@@ -96,7 +119,6 @@ export function WebSocketProvider({ children }) {
 
       ws.onclose = () => {
         setIsConnected(false);
-        // Retry connection in 3 seconds
         setTimeout(connectWs, 3000);
       };
 
@@ -117,14 +139,66 @@ export function WebSocketProvider({ children }) {
     fetchInitialData();
   };
 
+  const sendChatMessage = async (msgData) => {
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(msgData)
+      });
+      if (res.ok) {
+        const newMsg = await res.json();
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === newMsg.id);
+          return exists ? prev : [...prev, newMsg];
+        });
+        return newMsg;
+      }
+    } catch (err) {
+      console.error('Send message error:', err);
+    }
+  };
+
+  const sendTypingIndicator = (threadId, isTyping, userSession) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'TYPING_INDICATOR',
+        threadId,
+        isTyping,
+        userId: userSession?.userId || 'user-current',
+        userName: userSession?.userName || userSession?.hospitalName || 'Duty Staff',
+        userRole: userSession?.roleDesk || 'Staff'
+      }));
+    }
+  };
+
+  const markMessagesRead = async (threadId, userId) => {
+    try {
+      await fetch('/api/messages/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadId, userId })
+      });
+      setMessages(prev => prev.map(m => m.threadId === threadId ? { ...m, status: 'READ' } : m));
+    } catch (err) {
+      console.error('Mark read error:', err);
+    }
+  };
+
   return (
     <WebSocketContext.Provider value={{
       isConnected,
       hospitals,
       referrals,
+      threads,
+      messages,
+      typingUsers,
       lastNotification,
       setLastNotification,
-      refreshAll
+      refreshAll,
+      sendChatMessage,
+      sendTypingIndicator,
+      markMessagesRead
     }}>
       {children}
     </WebSocketContext.Provider>

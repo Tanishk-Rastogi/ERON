@@ -129,7 +129,7 @@ export function CriticalFind({ onReferralCreated }) {
             <Compass className="w-5 h-5" aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-2xl font-light text-[#0c0a09]">Critical Find (Fast Match)</h1>
+            <h1 className="text-2xl font-light text-[#0c0a09]">Critical Find</h1>
             <p className="text-xs text-[#777169] font-light">
               Multi-factor candidate ranking: Capabilities + Live Capacity + Traffic-adjusted ETA.
             </p>

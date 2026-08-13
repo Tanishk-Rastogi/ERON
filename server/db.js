@@ -14,6 +14,8 @@ class Database {
     this.referralPackets = [];
     this.users = [];
     this.smsLogs = [];
+    this.threads = [];
+    this.messages = [];
 
     this.seed();
   }
@@ -267,6 +269,97 @@ class Database {
       referralId: refId,
       ...encrypted
     });
+
+    // 10. Seed Communication Threads & Messages
+    this.threads = [
+      {
+        id: 'thread-ref-1001',
+        type: 'REFERRAL_CHANNEL',
+        referralId: refId,
+        patientRefCode: 'PAT-2026-8941',
+        title: 'Referral #PAT-2026-8941 (City Central → St. Jude)',
+        originHospitalId: 'hosp-a',
+        targetHospitalId: 'hosp-b',
+        priority: 'CRITICAL',
+        unreadCounts: { 'user-admin-b': 1, 'user-staff-1': 0 },
+        lastMessageText: 'ALS Ambulance AMB-101 dispatched. ETA 14 mins.',
+        lastMessageAt: new Date(Date.now() - 5 * 60000).toISOString(),
+        createdAt: new Date(Date.now() - 12 * 60000).toISOString()
+      },
+      {
+        id: 'thread-hosp-a-hosp-b',
+        type: 'HOSPITAL_DIRECT',
+        title: 'Direct Channel: Hosp A ↔ Hosp B',
+        originHospitalId: 'hosp-a',
+        targetHospitalId: 'hosp-b',
+        priority: 'URGENT',
+        unreadCounts: {},
+        lastMessageText: 'ICU Bed Availability query confirmed',
+        lastMessageAt: new Date(Date.now() - 30 * 60000).toISOString(),
+        createdAt: new Date(Date.now() - 60 * 60000).toISOString()
+      },
+      {
+        id: 'thread-control-broadcast',
+        type: 'CONTROL_BROADCAST',
+        title: 'District-01 Control Room Emergency Broadcast',
+        originHospitalId: 'hosp-a',
+        targetHospitalId: null,
+        priority: 'CRITICAL',
+        unreadCounts: {},
+        lastMessageText: 'ALERT: Severe traffic bottleneck on MG Road corridor',
+        lastMessageAt: new Date(Date.now() - 45 * 60000).toISOString(),
+        createdAt: new Date(Date.now() - 120 * 60000).toISOString()
+      }
+    ];
+
+    this.messages = [
+      {
+        id: 'msg-1',
+        threadId: 'thread-ref-1001',
+        referralId: refId,
+        senderId: 'user-staff-1',
+        senderName: 'Nurse Anjali Verma',
+        senderRole: 'Duty Nurse',
+        senderHospitalId: 'hosp-a',
+        text: 'CRITICAL: Patient Karan Sharma (42M) with severe head trauma. GCS 8/15. Requires ICU bed + Neurosurgery + Ventilator.',
+        priority: 'CRITICAL',
+        messageType: 'REFERRAL_REQUEST',
+        hasAttachment: true,
+        attachmentPacketId: 'pkt-1',
+        status: 'READ',
+        createdAt: new Date(Date.now() - 10 * 60000).toISOString()
+      },
+      {
+        id: 'msg-2',
+        threadId: 'thread-ref-1001',
+        referralId: refId,
+        senderId: 'user-admin-b',
+        senderName: 'Bed Desk B - Rajesh',
+        senderRole: 'Receiving Bed Desk',
+        senderHospitalId: 'hosp-b',
+        text: 'ICU Bed #101 reserved at St. Jude Trauma Center. Bed hold confirmed.',
+        priority: 'CRITICAL',
+        messageType: 'BED_HOLD_CONFIRMED',
+        hasAttachment: false,
+        status: 'READ',
+        createdAt: new Date(Date.now() - 8 * 60000).toISOString()
+      },
+      {
+        id: 'msg-3',
+        threadId: 'thread-ref-1001',
+        referralId: refId,
+        senderId: 'user-disp-1',
+        senderName: 'Suresh Kumar (Driver)',
+        senderRole: 'Ambulance Driver',
+        senderHospitalId: 'hosp-a',
+        text: 'ALS Ambulance AMB-101 dispatched. ETA 14 mins to St. Jude Trauma Center.',
+        priority: 'URGENT',
+        messageType: 'DISPATCH_UPDATE',
+        hasAttachment: false,
+        status: 'DELIVERED',
+        createdAt: new Date(Date.now() - 5 * 60000).toISOString()
+      }
+    ];
   }
 
   createBedUnitsForHospital(hospitalId, resourceType, count) {
@@ -372,6 +465,75 @@ class Database {
 
   getPacketForReferral(referralId) {
     return this.referralPackets.find(p => p.referralId === referralId);
+  }
+
+  getThreads() {
+    return this.threads;
+  }
+
+  getMessages(threadId) {
+    if (!threadId) return this.messages;
+    return this.messages.filter(m => m.threadId === threadId);
+  }
+
+  addMessage(msgData) {
+    const newMsg = {
+      id: `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      threadId: msgData.threadId || 'thread-ref-1001',
+      referralId: msgData.referralId || 'ref-1001',
+      senderId: msgData.senderId || 'user-staff-1',
+      senderName: msgData.senderName || 'Duty Staff',
+      senderRole: msgData.senderRole || 'Duty Nurse',
+      senderHospitalId: msgData.senderHospitalId || 'hosp-a',
+      text: msgData.text || '',
+      priority: msgData.priority || 'URGENT',
+      messageType: msgData.messageType || 'REGULAR',
+      hasAttachment: !!msgData.attachmentPacketId,
+      attachmentPacketId: msgData.attachmentPacketId || null,
+      status: 'DELIVERED',
+      createdAt: new Date().toISOString()
+    };
+
+    this.messages.push(newMsg);
+
+    // Update parent thread metadata
+    const thread = this.threads.find(t => t.id === newMsg.threadId);
+    if (thread) {
+      thread.lastMessageText = newMsg.text;
+      thread.lastMessageAt = newMsg.createdAt;
+    } else {
+      // Auto-create thread if missing
+      this.threads.push({
+        id: newMsg.threadId,
+        type: 'REFERRAL_CHANNEL',
+        referralId: newMsg.referralId,
+        title: `Thread ${newMsg.threadId}`,
+        priority: newMsg.priority,
+        unreadCounts: {},
+        lastMessageText: newMsg.text,
+        lastMessageAt: newMsg.createdAt,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    return newMsg;
+  }
+
+  markMessagesRead(threadId, userId) {
+    let updatedCount = 0;
+    this.messages.forEach(m => {
+      if (m.threadId === threadId && m.status !== 'READ') {
+        m.status = 'READ';
+        updatedCount++;
+      }
+    });
+
+    const thread = this.threads.find(t => t.id === threadId);
+    if (thread && thread.unreadCounts && userId) {
+      thread.unreadCounts[userId] = 0;
+    }
+
+    return { success: true, threadId, updatedCount };
   }
 }
 

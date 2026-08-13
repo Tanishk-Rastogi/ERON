@@ -68,45 +68,9 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
   return (
     <div className="space-y-6">
       {/* Editorial Header Card */}
-      <div className="eleven-card p-8 bg-gradient-to-r from-white via-[#fafafa] to-[#f5f5f5] relative overflow-hidden border-[#e7e5e4]">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-light tracking-tight text-[#0c0a09]">Referral Orchestration Control</h1>
-              <span className="text-[10px] bg-[#f0efed] text-[#4e4e4e] font-mono tabular-nums px-2 py-0.5 rounded-full border border-[#e7e5e4]">
-                DISTRICT-01
-              </span>
-            </div>
-            <p className="text-xs text-[#777169] mt-1 max-w-2xl font-light leading-relaxed">
-              Quiet real-time coordination layer. Live bed capacity telemetries and automatic mid-transit re-routing updates.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <button
-              onClick={refreshAll}
-              aria-label="Refresh referral queue data"
-              className="eleven-button eleven-button-secondary text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
-            >
-              <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Refresh</span>
-            </button>
-
-            <button
-              onClick={onNavigateToCriticalFind}
-              aria-label="Create new critical referral"
-              className="eleven-button eleven-button-primary text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
-            >
-              <Plus className="w-4 h-4" aria-hidden="true" />
-              <span>New Critical Referral</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Sub-tabs */}
-      <div className="flex items-center justify-between border-b border-[#e7e5e4] pb-3">
-        <div className="flex gap-2">
+      {/* Combined Sub-tabs & Action Buttons Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#e7e5e4] pb-3">
+        <div className="flex gap-2 overflow-x-auto">
           <button
             onClick={() => setActiveSubTab('sending')}
             aria-label={`View sending queue (${sendingReferrals.length} referrals)`}
@@ -136,9 +100,25 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
           </button>
         </div>
 
-        <span className="text-xs text-[#777169] font-mono tabular-nums hidden sm:inline">
-          Active Records: {displayedReferrals.length}
-        </span>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <button
+            onClick={refreshAll}
+            aria-label="Refresh referral queue data"
+            className="eleven-button eleven-button-secondary text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
+          >
+            <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Refresh</span>
+          </button>
+
+          <button
+            onClick={onNavigateToCriticalFind}
+            aria-label="Create new critical referral"
+            className="eleven-button eleven-button-primary text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            <span>New Critical Referral</span>
+          </button>
+        </div>
       </div>
 
       {/* Referral List */}
