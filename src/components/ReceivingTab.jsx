@@ -315,32 +315,6 @@ export function ReceivingTab({ preSelectedReferral, onNavigateToCapacity }) {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* Top Banner */}
-      <div className="eleven-card p-6 bg-gradient-to-r from-white via-[#fafafa] to-[#f5f5f5]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-[#292524] text-white flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-5 h-5" aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-xl font-bold text-[#0c0a09] truncate">Receiving Handoff & Patient Telemetry Desk</h1>
-              <p className="text-xs text-[#777169] font-light truncate">
-                Live GPS route tracking on the left • Complete referring hospital details on the right.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={onNavigateToCapacity}
-            aria-label="Navigate to Capacity Panel"
-            className="eleven-button eleven-button-secondary text-xs flex-shrink-0 font-bold"
-          >
-            <span>Update Capacity Panel</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#777169]" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-
       {/* Patient Selector Navigation Tabs */}
       <div className="flex items-center justify-between gap-2 border-b border-[#e7e5e4] pb-3 overflow-x-auto">
         <div className="flex items-center gap-2">
