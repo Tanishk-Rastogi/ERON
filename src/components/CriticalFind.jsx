@@ -122,21 +122,6 @@ export function CriticalFind({ onReferralCreated }) {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
-      <div className="eleven-card p-8 bg-gradient-to-r from-white via-[#fafafa] to-[#f5f5f5]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#292524] text-white flex items-center justify-center flex-shrink-0">
-            <Compass className="w-5 h-5" aria-hidden="true" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-light text-[#0c0a09]">Critical Find</h1>
-            <p className="text-xs text-[#777169] font-light">
-              Multi-factor candidate ranking: Capabilities + Live Capacity + Traffic-adjusted ETA.
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Requirement Sidebar */}
         <div className="eleven-card p-6 space-y-5 lg:col-span-1 bg-white">
