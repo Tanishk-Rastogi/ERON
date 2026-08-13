@@ -8,7 +8,7 @@ export function AuthPage({ onLoginSuccess }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -23,18 +23,37 @@ export function AuthPage({ onLoginSuccess }) {
 
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hospitalName: finalHospitalName, hospitalCode: finalCode })
+      });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        setError(err.error || 'Authentication failed');
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      
       const authData = {
-        hospitalName: finalHospitalName,
-        hospitalCode: finalCode,
-        roleDesk: 'Emergency Referral Officer',
+        hospitalId: data.hospitalId,
+        hospitalName: data.hospitalName,
+        roleDesk: data.role || 'Emergency Referral Officer',
+        token: data.token,
         loginTime: new Date().toISOString()
       };
 
       localStorage.setItem('eron_auth_session', JSON.stringify(authData));
       setLoading(false);
       onLoginSuccess(authData);
-    }, 300);
+    } catch (err) {
+      setError('Network error during authentication');
+      setLoading(false);
+    }
   };
 
   return (

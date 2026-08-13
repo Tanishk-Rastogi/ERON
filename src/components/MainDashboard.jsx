@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiClient } from '../utils/apiClient.js';
 import { useWebSocket } from '../context/WebSocketContext';
 import { 
   ArrowUpRight, 
@@ -292,7 +293,7 @@ export function MainDashboard({ onNavigateToCriticalFind, onRedirectToReceiving 
 
     setLoadingPacket(true);
     try {
-      const res = await fetch(`/api/referrals/${ref.id}/packet`);
+      const res = await apiClient(`/api/referrals/${ref.id}/packet`);
       if (res.ok) {
         const data = await res.json();
         setDecryptedPacket(data.decryptedPayload);
@@ -730,3 +731,4 @@ export function MainDashboard({ onNavigateToCriticalFind, onRedirectToReceiving 
     </div>
   );
 }
+

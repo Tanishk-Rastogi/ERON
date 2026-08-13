@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiClient } from '../utils/apiClient.js';
 import { useWebSocket } from '../context/WebSocketContext';
 import { 
   Bed, 
@@ -18,7 +19,7 @@ export function CapacityPanel() {
     if (!selectedHospital) return;
 
     try {
-      await fetch(`/api/hospitals/${selectedHospital.id}/capacity`, {
+      await apiClient(`/api/hospitals/${selectedHospital.id}/capacity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -36,7 +37,7 @@ export function CapacityPanel() {
     if (!selectedHospital) return;
 
     try {
-      await fetch(`/api/hospitals/${selectedHospital.id}/capacity`, {
+      await apiClient(`/api/hospitals/${selectedHospital.id}/capacity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,3 +176,4 @@ export function CapacityPanel() {
     </div>
   );
 }
+

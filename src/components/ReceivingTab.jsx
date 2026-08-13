@@ -257,6 +257,7 @@ export function ReceivingTab({ preSelectedReferral, onNavigateToCapacity }) {
 
   const displayedIncomingReferrals = realIncomingReferrals.length > 0 ? realIncomingReferrals : DEMO_INCOMING_REFERRALS;
 
+<<<<<<< HEAD
   // Initialize selected referral from preSelectedReferral or default to first incoming
   useEffect(() => {
     if (preSelectedReferral) {
@@ -295,7 +296,7 @@ export function ReceivingTab({ preSelectedReferral, onNavigateToCapacity }) {
 
   const handleCompleteHandover = async (refId) => {
     try {
-      await fetch(`/api/referrals/${refId}/handover`, {
+      await apiClient(`/api/referrals/${refId}/handover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ staffId: 'user-admin-b' })
@@ -509,3 +510,4 @@ export function ReceivingTab({ preSelectedReferral, onNavigateToCapacity }) {
     </div>
   );
 }
+

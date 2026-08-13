@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiClient } from '../utils/apiClient.js';
 import { useWebSocket } from '../context/WebSocketContext';
 import { 
   Zap, 
@@ -30,7 +31,7 @@ export function DemoCenterpiece({ onRerouteTriggered }) {
     setSimulationResult(null);
 
     try {
-      const res = await fetch('/api/referrals/simulate-capacity-loss', {
+      const res = await apiClient('/api/referrals/simulate-capacity-loss', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -56,7 +57,7 @@ export function DemoCenterpiece({ onRerouteTriggered }) {
     setSmsReply(null);
 
     try {
-      const res = await fetch('/api/sms/webhook', {
+      const res = await apiClient('/api/sms/webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -220,3 +221,4 @@ export function DemoCenterpiece({ onRerouteTriggered }) {
     </div>
   );
 }
+
