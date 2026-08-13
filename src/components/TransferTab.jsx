@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Check, MapPin, Building2, Activity, Phone, Navigation } from 'lucide-react';
+import { Search, Check, MapPin, Phone, Building2, Navigation, ShieldCheck, X, ChevronRight, Layers } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -45,14 +45,24 @@ const HOSPITALS_MAP_DATA = [
     address: 'Indiranagar 100ft Road, East Zone',
     lat: 12.9716,
     lng: 77.5946,
-    icuAvailable: 12,
-    icuTotal: 30,
-    ventAvailable: 6,
-    type: 'District Secondary Hospital',
-    status: 'ACTIVE_ORIGIN',
-    statusText: 'Active Referral Origin',
+    distanceKm: '0.0', // Origin location
+    phone: '+91 80 2520 1923',
     color: '#10b981', // Emerald green
-    phone: '+91 80 2520 1923'
+    statusText: 'Active Referral Origin',
+    resources: [
+      { name: 'ICU', available: 12, total: 30 },
+      { name: 'Ventilator', available: 6, total: 15 },
+      { name: 'CT Scan', available: 2, total: 3 },
+      { name: 'X-ray', available: 5, total: 10 },
+      { name: 'Ultrasound', available: 4, total: 6 },
+      { name: 'Emergency Department', available: 15, total: 40 },
+      { name: 'Trauma Center', available: 8, total: 20 },
+      { name: 'General Surgeon', available: 3, total: 5 },
+      { name: 'Intensivist', available: 2, total: 4 },
+      { name: 'Anesthesiologist', available: 3, total: 6 },
+      { name: 'Blood Bank', available: 25, total: 50 },
+      { name: 'ECG', available: 8, total: 12 }
+    ]
   },
   {
     id: 'hosp-b',
@@ -61,14 +71,24 @@ const HOSPITALS_MAP_DATA = [
     address: 'Koramangala 4th Block, South Zone',
     lat: 12.9352,
     lng: 77.6245,
-    icuAvailable: 3,
-    icuTotal: 15,
-    ventAvailable: 2,
-    type: 'Tertiary Trauma Center',
-    status: 'RECEIVING_TARGET',
-    statusText: 'In-Transit Target Destination',
+    distanceKm: '5.2',
+    phone: '+91 80 4115 8800',
     color: '#2563eb', // Blue
-    phone: '+91 80 4115 8800'
+    statusText: 'In-Transit Target Destination',
+    resources: [
+      { name: 'ICU', available: 3, total: 15 },
+      { name: 'Trauma ICU', available: 2, total: 8 },
+      { name: 'Ventilator', available: 2, total: 8 },
+      { name: 'HFNC', available: 4, total: 10 },
+      { name: 'CT Scan', available: 1, total: 2 },
+      { name: 'MRI', available: 1, total: 2 },
+      { name: 'Neurosurgeon', available: 2, total: 3 },
+      { name: 'Cardiologist', available: 3, total: 5 },
+      { name: 'Stroke Unit', available: 4, total: 10 },
+      { name: 'Emergency OT', available: 2, total: 4 },
+      { name: 'Blood Bank', available: 14, total: 30 },
+      { name: 'Anesthesiologist', available: 4, total: 6 }
+    ]
   },
   {
     id: 'hosp-c',
@@ -77,14 +97,29 @@ const HOSPITALS_MAP_DATA = [
     address: 'Malleshwaram West, North Zone',
     lat: 12.9988,
     lng: 77.5704,
-    icuAvailable: 8,
-    icuTotal: 25,
-    ventAvailable: 5,
-    type: 'Specialized Neuro Center',
-    status: 'AVAILABLE_CANDIDATE',
-    statusText: 'Available Candidate Match',
+    distanceKm: '3.4',
+    phone: '+91 80 2334 5678',
     color: '#d97706', // Amber
-    phone: '+91 80 2334 5678'
+    statusText: 'Available Candidate Match',
+    resources: [
+      { name: 'ICU', available: 8, total: 25 },
+      { name: 'Trauma ICU', available: 5, total: 12 },
+      { name: 'PICU', available: 3, total: 10 },
+      { name: 'NICU', available: 4, total: 10 },
+      { name: 'Ventilator', available: 5, total: 12 },
+      { name: 'HFNC', available: 6, total: 15 },
+      { name: 'Emergency Department', available: 20, total: 50 },
+      { name: 'Trauma Center', available: 12, total: 30 },
+      { name: 'Emergency OT', available: 3, total: 6 },
+      { name: 'Blood Bank', available: 30, total: 60 },
+      { name: 'CT Scan', available: 2, total: 3 },
+      { name: 'MRI', available: 2, total: 3 },
+      { name: 'Neurosurgeon', available: 4, total: 5 },
+      { name: 'Trauma Surgeon', available: 3, total: 4 },
+      { name: 'Orthopedic Surgeon', available: 4, total: 6 },
+      { name: 'Stroke Unit', available: 6, total: 12 },
+      { name: 'Dialysis', available: 5, total: 10 }
+    ]
   },
   {
     id: 'hosp-d',
@@ -93,44 +128,79 @@ const HOSPITALS_MAP_DATA = [
     address: 'Whitefield Main Road, East Zone',
     lat: 12.9698,
     lng: 77.7500,
-    icuAvailable: 0,
-    icuTotal: 10,
-    ventAvailable: 0,
-    type: 'Peripheral Desk',
-    status: 'FULL_CAPACITY',
-    statusText: 'No ICU Beds Available',
+    distanceKm: '12.8',
+    phone: '+91 80 6718 2000',
     color: '#dc2626', // Red
-    phone: '+91 80 6718 2000'
+    statusText: 'No ICU Beds Available',
+    resources: [
+      { name: 'X-ray', available: 3, total: 5 },
+      { name: 'ECG', available: 4, total: 6 },
+      { name: 'General Surgeon', available: 1, total: 2 },
+      { name: 'Pediatrician', available: 2, total: 4 }
+    ]
   }
 ];
 
-const createCustomIcon = (code, color, icuAvailable) => {
+// Custom Google Maps Location Pin Marker with Medical Cross (+) Sign
+const createGoogleMapsPinIcon = (code, color, isMatch) => {
   return L.divIcon({
-    className: 'custom-leaflet-hospital-icon',
+    className: 'custom-google-maps-pin',
     html: `
       <div style="
-        background-color: ${color};
-        color: white;
-        padding: 5px 10px;
-        border-radius: 9999px;
-        font-family: monospace;
-        font-size: 11px;
-        font-weight: bold;
-        border: 2px solid white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        position: relative;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 6px;
-        white-space: nowrap;
+        opacity: ${isMatch ? 1 : 0.35};
+        filter: ${isMatch ? 'none' : 'grayscale(80%)'};
+        transition: all 0.25s ease;
+        transform: scale(${isMatch ? 1 : 0.85});
         cursor: pointer;
       ">
-        <span style="width: 8px; height: 8px; border-radius: 9999px; background: white;"></span>
-        <span>${code}</span>
-        <span style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 6px; font-size: 10px;">ICU: ${icuAvailable}</span>
+        <div style="
+          background-color: ${color};
+          color: white;
+          width: 38px;
+          height: 38px;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid white;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+        ">
+          <div style="
+            transform: rotate(45deg);
+            font-size: 16px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+          ">
+            ✚
+          </div>
+        </div>
+        <div style="
+          background: #1c1917;
+          color: white;
+          font-family: monospace;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 2px 6px;
+          border-radius: 6px;
+          margin-top: 4px;
+          white-space: nowrap;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.2);
+        ">
+          ${code}
+        </div>
       </div>
     `,
-    iconSize: [110, 30],
-    iconAnchor: [55, 15]
+    iconSize: [40, 60],
+    iconAnchor: [20, 48]
   });
 };
 
@@ -139,7 +209,7 @@ export function TransferTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [activeHospital, setActiveHospital] = useState(null);
+  const [detailHospitalModal, setDetailHospitalModal] = useState(null);
   const searchContainerRef = useRef(null);
 
   // Filter master resources based on searchQuery
@@ -150,13 +220,21 @@ export function TransferTab() {
       )
     : MASTER_RESOURCES;
 
-  // Filter map hospitals based on selected tags or query
-  const filteredHospitals = HOSPITALS_MAP_DATA.filter(h => {
-    if (selectedTags.length === 0 && !searchQuery.trim()) return true;
+  // Real-time map hospital filtering based on selected filter tags
+  const filteredHospitals = HOSPITALS_MAP_DATA.map(h => {
+    const hasAllSelectedTags = selectedTags.every(tag => {
+      const res = h.resources.find(r => r.name.toLowerCase() === tag.toLowerCase());
+      return res && res.available > 0;
+    });
+
     const query = searchQuery.toLowerCase().trim();
     const matchesQuery = !query || h.name.toLowerCase().includes(query) || h.address.toLowerCase().includes(query);
-    return matchesQuery;
+
+    const isMatch = hasAllSelectedTags && matchesQuery;
+    return { ...h, isMatch };
   });
+
+  const activeMatchesCount = filteredHospitals.filter(h => h.isMatch).length;
 
   // Handle outside clicks to close suggestion box
   useEffect(() => {
@@ -205,10 +283,9 @@ export function TransferTab() {
     }
   };
 
-  // Coordinates for polyline connecting active origin (Hosp A) to receiving target (Hosp B)
   const routePolyline = [
     [12.9716, 77.5946], // Hosp A
-    [12.9550, 77.6100], // Midpoint waypoint
+    [12.9550, 77.6100], // Waypoint
     [12.9352, 77.6245]  // Hosp B
   ];
 
@@ -338,6 +415,10 @@ export function TransferTab() {
             );
           })}
         </div>
+
+        <div className="text-xs font-mono text-[#777169]">
+          Matching Hospitals: <strong className="text-[#0c0a09]">{activeMatchesCount}</strong> / {HOSPITALS_MAP_DATA.length}
+        </div>
       </div>
 
       {/* Real Interactive OpenStreetMap Hospital Map Container */}
@@ -349,7 +430,7 @@ export function TransferTab() {
               <span>Real-Time Hospital & Regional Transfer Network Map</span>
             </h2>
             <p className="text-xs text-[#777169] font-light">
-              Live capacity monitoring across regional trauma centers & active dispatch corridors.
+              Single-tap pin for distance & popup. Double-tap pin to open full hospital resource details.
             </p>
           </div>
 
@@ -358,10 +439,10 @@ export function TransferTab() {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Origin
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Receiving Target
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Destination
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Candidate
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Candidate Match
             </span>
           </div>
         </div>
@@ -385,41 +466,66 @@ export function TransferTab() {
               pathOptions={{ color: '#2563eb', weight: 4, opacity: 0.8, dashArray: '8, 8' }}
             />
 
-            {/* Hospital Markers */}
+            {/* Google-Style Hospital Pins with Medical Cross Sign */}
             {filteredHospitals.map(hosp => (
               <Marker
                 key={hosp.id}
                 position={[hosp.lat, hosp.lng]}
-                icon={createCustomIcon(hosp.code, hosp.color, hosp.icuAvailable)}
+                icon={createGoogleMapsPinIcon(hosp.code, hosp.color, hosp.isMatch)}
                 eventHandlers={{
-                  click: () => setActiveHospital(hosp)
+                  dblclick: () => setDetailHospitalModal(hosp)
                 }}
               >
                 <Popup className="custom-hospital-leaflet-popup">
-                  <div className="p-2 space-y-2 font-sans text-xs">
-                    <div className="border-b border-[#e7e5e4] pb-1.5">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider block" style={{ color: hosp.color }}>
-                        {hosp.statusText}
-                      </span>
+                  <div className="p-2.5 space-y-2.5 font-sans text-xs min-w-[240px]">
+                    <div className="border-b border-[#e7e5e4] pb-2">
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border" style={{ color: hosp.color, borderColor: hosp.color + '40', backgroundColor: hosp.color + '15' }}>
+                          {hosp.statusText}
+                        </span>
+                        {!hosp.isMatch && (
+                          <span className="text-[9px] font-mono text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md font-bold">
+                            FILTER MISMATCH
+                          </span>
+                        )}
+                      </div>
                       <h3 className="font-bold text-[#0c0a09] text-sm">{hosp.name}</h3>
-                      <p className="text-[#777169] text-[11px]">{hosp.address}</p>
+                      <p className="text-[#777169] text-[11px] mt-0.5">{hosp.address}</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 bg-[#f5f5f5] p-2 rounded-lg font-mono">
-                      <div>
-                        <span className="text-[10px] text-[#777169] block">ICU Beds:</span>
-                        <strong className="text-emerald-700 text-xs">{hosp.icuAvailable} free</strong> / {hosp.icuTotal}
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-[#777169] block">Ventilators:</span>
-                        <strong className="text-blue-700 text-xs">{hosp.ventAvailable} free</strong>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[10px] text-[#777169] font-mono flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-[#292524]" /> {hosp.phone}
+                    {/* Distance from Current Location */}
+                    <div className="bg-[#f5f5f5] p-2 rounded-xl flex items-center justify-between font-mono text-xs">
+                      <span className="text-[#777169] text-[11px] flex items-center gap-1 font-sans">
+                        <Navigation className="w-3.5 h-3.5 text-emerald-600" /> Distance from origin:
                       </span>
+                      <strong className="text-[#0c0a09] font-bold">
+                        {hosp.distanceKm === '0.0' ? 'Current Origin' : `${hosp.distanceKm} km`}
+                      </strong>
+                    </div>
+
+                    {/* Available Bed Count Summary */}
+                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                      <div className="bg-emerald-50 border border-emerald-100 p-2 rounded-lg">
+                        <span className="text-[10px] text-[#777169] block font-sans">ICU Beds:</span>
+                        <strong className="text-emerald-700">{hosp.resources.find(r=>r.name==='ICU')?.available || 0} Available</strong>
+                      </div>
+                      <div className="bg-blue-50 border border-blue-100 p-2 rounded-lg">
+                        <span className="text-[10px] text-[#777169] block font-sans">Ventilators:</span>
+                        <strong className="text-blue-700">{hosp.resources.find(r=>r.name==='Ventilator')?.available || 0} Available</strong>
+                      </div>
+                    </div>
+
+                    {/* Action Button to Open Full Hospital Resource Details Modal */}
+                    <button
+                      onClick={() => setDetailHospitalModal(hosp)}
+                      className="w-full eleven-button eleven-button-primary text-xs py-2 px-3 justify-center font-bold shadow-2xs hover:bg-[#292524] transition-all"
+                    >
+                      <span>View Full Resource Details</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    <div className="text-[10px] text-[#a8a29e] text-center font-mono">
+                      (Hint: Double-click pin anytime to open details)
                     </div>
                   </div>
                 </Popup>
@@ -428,6 +534,122 @@ export function TransferTab() {
           </MapContainer>
         </div>
       </div>
+
+      {/* Hospital Full Details Modal (Double-Click / Details Trigger) */}
+      {detailHospitalModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-[#0c0a09]/50 backdrop-blur-xs flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="eleven-card w-full max-w-2xl bg-white border-[#d6d3d1] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl">
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-30 bg-white px-6 py-4 border-b border-[#e7e5e4] flex items-center justify-between rounded-t-2xl">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: detailHospitalModal.color }}></span>
+                  <h2 className="text-lg font-bold text-[#0c0a09]">{detailHospitalModal.name}</h2>
+                </div>
+                <p className="text-xs text-[#777169] mt-0.5">{detailHospitalModal.address} • {detailHospitalModal.phone}</p>
+              </div>
+
+              <button
+                onClick={() => setDetailHospitalModal(null)}
+                aria-label="Close modal"
+                className="eleven-button eleven-button-secondary text-xs py-1.5 px-3 font-bold hover:bg-[#292524] hover:text-white"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Scrollable Resource Details Body */}
+            <div className="p-6 space-y-6 overflow-y-auto flex-1 font-sans">
+              {/* Distance & Contact Info */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-[#fafafa] border border-[#e7e5e4] p-3 rounded-xl text-xs font-mono">
+                <div>
+                  <span className="text-[#777169] text-[10px] block font-sans">Distance from Origin:</span>
+                  <strong className="text-[#0c0a09] text-sm">
+                    {detailHospitalModal.distanceKm === '0.0' ? 'Origin Location' : `${detailHospitalModal.distanceKm} km`}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-[#777169] text-[10px] block font-sans">Hospital Status:</span>
+                  <strong style={{ color: detailHospitalModal.color }}>{detailHospitalModal.statusText}</strong>
+                </div>
+                <div>
+                  <span className="text-[#777169] text-[10px] block font-sans">Direct Desk Phone:</span>
+                  <strong className="text-[#292524]">{detailHospitalModal.phone}</strong>
+                </div>
+              </div>
+
+              {/* 1. CHOSEN FILTER REQUIREMENTS (Displayed FIRST!) */}
+              {selectedTags.length > 0 && (
+                <div className="space-y-3 bg-emerald-50/60 border border-emerald-200 p-4 rounded-xl">
+                  <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-emerald-800 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Chosen Filter Requirements ({selectedTags.length})</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {selectedTags.map(tag => {
+                      const res = detailHospitalModal.resources.find(r => r.name.toLowerCase() === tag.toLowerCase());
+                      const isAvailable = res && res.available > 0;
+                      return (
+                        <div 
+                          key={tag} 
+                          className={`p-3 rounded-lg border flex items-center justify-between text-xs ${
+                            isAvailable 
+                              ? 'bg-white border-emerald-300 shadow-2xs' 
+                              : 'bg-red-50 border-red-200 text-red-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isAvailable ? (
+                              <Check className="w-4 h-4 text-emerald-600 font-bold" />
+                            ) : (
+                              <X className="w-4 h-4 text-red-600 font-bold" />
+                            )}
+                            <span className="font-bold text-[#0c0a09]">[{tag}]</span>
+                          </div>
+
+                          <div className="font-mono text-right">
+                            {isAvailable ? (
+                              <span className="text-emerald-700 font-bold">{res.available} Available</span>
+                            ) : (
+                              <span className="text-red-600 font-bold">Unavailable</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 2. ALL OTHER AVAILABLE FACILITIES & SPECIALISTS */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-[#777169] flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#292524]" />
+                  <span>All Other Available Hospital Resources ({detailHospitalModal.resources.length})</span>
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {detailHospitalModal.resources
+                    .filter(r => !selectedTags.some(t => t.toLowerCase() === r.name.toLowerCase()))
+                    .map(r => (
+                      <div key={r.name} className="p-3 bg-white border border-[#e7e5e4] rounded-lg flex items-center justify-between text-xs">
+                        <span className="font-semibold text-[#292524]">{r.name}</span>
+                        <span className="font-mono text-xs font-bold text-emerald-600">
+                          {r.available} Available {r.total ? `/ ${r.total}` : ''}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
