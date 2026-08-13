@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Check } from 'lucide-react';
 
 const MASTER_RESOURCES = [
   { name: 'ICU', category: 'Beds & Care Units' },
@@ -35,6 +35,7 @@ const MASTER_RESOURCES = [
 ];
 
 export function TransferTab() {
+  const [selectedTags, setSelectedTags] = useState(['ICU', 'Ventilator']);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -60,11 +61,27 @@ export function TransferTab() {
   }, []);
 
   const handleSelectSuggestion = (resourceName) => {
-    setSearchQuery(resourceName);
-    setShowSuggestions(false);
+    if (!selectedTags.includes(resourceName)) {
+      setSelectedTags([...selectedTags, resourceName]);
+    } else {
+      // Toggle off if already selected
+      setSelectedTags(selectedTags.filter(t => t !== resourceName));
+    }
+    setSearchQuery('');
+    setShowSuggestions(true);
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setSelectedTags(selectedTags.filter(t => t !== tagToRemove));
   };
 
   const handleKeyDown = (e) => {
+    if (e.key === 'Backspace' && !searchQuery && selectedTags.length > 0) {
+      // Remove last tag when backspace is pressed on empty input
+      setSelectedTags(selectedTags.slice(0, -1));
+      return;
+    }
+
     if (!showSuggestions) return;
 
     if (e.key === 'ArrowDown') {
@@ -83,12 +100,33 @@ export function TransferTab() {
 
   return (
     <div className="space-y-8 font-sans max-w-4xl mx-auto pt-4">
-      {/* Prominent Search Bar with Auto Suggestions */}
+      {/* Prominent Multi-Select Search Bar */}
       <div ref={searchContainerRef} className="w-full relative">
-        <div className="relative">
+        <div className="w-full bg-white border border-[#d6d3d1] rounded-2xl p-2.5 pl-11 pr-20 min-h-[58px] flex flex-wrap items-center gap-2 focus-within:border-[#292524] focus-within:ring-2 focus-within:ring-[#292524]/20 transition-all shadow-sm hover:shadow-md relative">
+          <Search className="w-5 h-5 text-[#777169] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+          {/* Multi-Selected Filter Tags */}
+          {selectedTags.map(tag => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#292524] text-white text-xs font-bold font-mono animate-in zoom-in-95 duration-150 shadow-2xs"
+            >
+              <span>[{tag}]</span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleRemoveTag(tag); }}
+                className="hover:text-amber-400 font-bold ml-0.5 text-xs text-[#a8a29e]"
+                title={`Remove ${tag}`}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+
+          {/* Text Input Field */}
           <input
             type="text"
-            placeholder="Search transfers or resources e.g. ICU, Ventilator, CT Scan..."
+            placeholder={selectedTags.length === 0 ? "Search transfers or multi-select resources e.g. ICU, Ventilator..." : "Add more filter tags..."}
             value={searchQuery}
             onFocus={() => setShowSuggestions(true)}
             onChange={(e) => {
@@ -97,19 +135,21 @@ export function TransferTab() {
               setSelectedIndex(-1);
             }}
             onKeyDown={handleKeyDown}
-            className="w-full bg-white border border-[#d6d3d1] rounded-2xl py-4 pl-12 pr-10 text-base text-[#0c0a09] font-medium placeholder-[#777169] focus:outline-none focus:border-[#292524] focus:ring-2 focus:ring-[#292524]/20 transition-all shadow-sm hover:shadow-md"
+            className="flex-1 bg-transparent min-w-[200px] text-base text-[#0c0a09] font-medium placeholder-[#777169] focus:outline-none py-1"
           />
-          <Search className="w-5 h-5 text-[#777169] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-          {searchQuery && (
+
+          {(selectedTags.length > 0 || searchQuery) && (
             <button
+              type="button"
               onClick={() => {
+                setSelectedTags([]);
                 setSearchQuery('');
                 setShowSuggestions(false);
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#777169] hover:text-[#0c0a09] p-1 flex items-center justify-center"
-              title="Clear search"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#777169] hover:text-[#dc2626] p-1 transition-colors"
+              title="Clear all filters"
             >
-              ✕
+              Clear All
             </button>
           )}
         </div>
@@ -119,7 +159,7 @@ export function TransferTab() {
           <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#e7e5e4] rounded-2xl shadow-xl z-50 max-h-80 overflow-y-auto divide-y divide-[#f0efed] animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="p-2.5 bg-[#fafafa] border-b border-[#e7e5e4] flex items-center justify-between text-[11px] font-mono font-bold text-[#777169]">
               <span>TRACKABLE HOSPITAL RESOURCES ({filteredSuggestions.length})</span>
-              <span>Press ↑ ↓ to navigate</span>
+              <span>Click to add / remove tags</span>
             </div>
 
             {filteredSuggestions.length === 0 ? (
@@ -127,45 +167,65 @@ export function TransferTab() {
                 No matching resources found.
               </div>
             ) : (
-              filteredSuggestions.map((item, idx) => (
-                <div
-                  key={item.name}
-                  onClick={() => handleSelectSuggestion(item.name)}
-                  className={`p-3.5 flex items-center justify-between cursor-pointer transition-colors text-xs ${
-                    idx === selectedIndex ? 'bg-[#292524] text-white' : 'hover:bg-[#f5f5f5] text-[#0c0a09]'
-                  }`}
-                >
-                  <span className="font-bold">{item.name}</span>
+              filteredSuggestions.map((item, idx) => {
+                const isSelected = selectedTags.includes(item.name);
+                return (
+                  <div
+                    key={item.name}
+                    onClick={() => handleSelectSuggestion(item.name)}
+                    className={`p-3.5 flex items-center justify-between cursor-pointer transition-colors text-xs ${
+                      isSelected 
+                        ? 'bg-emerald-50 text-[#0c0a09] font-bold' 
+                        : idx === selectedIndex 
+                          ? 'bg-[#292524] text-white' 
+                          : 'hover:bg-[#f5f5f5] text-[#0c0a09]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isSelected && <Check className="w-4 h-4 text-emerald-600 font-bold" />}
+                      <span className="font-bold">{item.name}</span>
+                    </div>
 
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
-                    idx === selectedIndex 
-                      ? 'bg-[#4e4e4e] text-white border-[#4e4e4e]' 
-                      : 'bg-[#fafafa] text-[#777169] border-[#e7e5e4]'
-                  }`}>
-                    {item.category}
-                  </span>
-                </div>
-              ))
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                      isSelected 
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : idx === selectedIndex 
+                          ? 'bg-[#4e4e4e] text-white border-[#4e4e4e]' 
+                          : 'bg-[#fafafa] text-[#777169] border-[#e7e5e4]'
+                    }`}>
+                      {isSelected ? 'ADDED' : item.category}
+                    </span>
+                  </div>
+                );
+              })
             )}
           </div>
         )}
       </div>
 
-      {/* Quick Access Popular Resource Chips */}
+      {/* Quick Access Multi-Select Resource Chips */}
       <div className="space-y-2">
         <span className="text-xs font-mono font-bold text-[#777169] uppercase tracking-wider block">
-          Quick Suggestion Filters:
+          Quick Multi-Select Filters:
         </span>
         <div className="flex flex-wrap gap-2">
-          {['ICU', 'Ventilator', 'CT Scan', 'Neurosurgeon', 'Blood Bank', 'Trauma Center', 'Stroke Unit', 'Dialysis'].map(chip => (
-            <button
-              key={chip}
-              onClick={() => handleSelectSuggestion(chip)}
-              className="px-3 py-1.5 rounded-full bg-white border border-[#e7e5e4] text-xs font-semibold text-[#292524] hover:bg-[#292524] hover:text-white transition-all shadow-2xs"
-            >
-              {chip}
-            </button>
-          ))}
+          {['ICU', 'Ventilator', 'CT Scan', 'Neurosurgeon', 'Blood Bank', 'Trauma Center', 'Stroke Unit', 'Dialysis'].map(chip => {
+            const active = selectedTags.includes(chip);
+            return (
+              <button
+                key={chip}
+                onClick={() => handleSelectSuggestion(chip)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border shadow-2xs flex items-center gap-1.5 ${
+                  active 
+                    ? 'bg-[#292524] text-white border-[#292524]' 
+                    : 'bg-white text-[#292524] border-[#e7e5e4] hover:bg-[#292524] hover:text-white'
+                }`}
+              >
+                <span>{chip}</span>
+                {active && <span className="text-[10px] text-amber-400 font-bold">✕</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
 
