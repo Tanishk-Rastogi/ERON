@@ -33,9 +33,6 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
   const handleRefresh = () => {
     setIsRefreshing(true);
     refreshAll();
-    if (setLastNotification) {
-      setLastNotification({ id: Date.now(), text: 'Referral queue data refreshed successfully.', type: 'info' });
-    }
     setTimeout(() => setIsRefreshing(false), 600);
   };
 
@@ -136,69 +133,109 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
             </p>
           </div>
         ) : (
-          displayedReferrals.map((ref) => (
-            <div
-              key={ref.id}
-              onClick={() => handleOpenDetail(ref)}
-              className="eleven-card p-6 cursor-pointer space-y-3 group"
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="space-y-2 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono tabular-nums text-sm font-bold text-[#0c0a09]">#{ref.patientRefCode}</span>
-                    {getStatusBadge(ref.status)}
-                    <span className={`eleven-badge ${
-                      ref.priority === 'CRITICAL' ? 'bg-[#e8b8c4]/30 text-[#dc2626] border-[#e8b8c4]' : 'bg-[#f4c5a8]/30 text-[#d97706] border-[#f4c5a8]'
+          displayedReferrals.map((ref) => {
+            const isCritical = ref.priority === 'CRITICAL';
+            const isRerouting = ref.status === 'RE_ROUTING';
+
+            return (
+              <div
+                key={ref.id}
+                onClick={() => handleOpenDetail(ref)}
+                className={`eleven-card p-6 cursor-pointer space-y-4 group bg-white border transition-all hover:border-[#292524] ${
+                  isRerouting ? 'border-amber-400 bg-amber-50/20' : 'border-[#e7e5e4]'
+                }`}
+              >
+                {/* 1. Header Row: Priority + Patient Code + Status + Ambulance Unit */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f0efed] pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono tabular-nums text-xs font-bold text-[#777169]">#{ref.patientRefCode}</span>
+                    <span className={`eleven-badge font-bold font-mono text-xs ${
+                      isCritical ? 'bg-[#e8b8c4]/40 text-[#dc2626] border-[#e8b8c4]' : 'bg-[#f4c5a8]/40 text-[#d97706] border-[#f4c5a8]'
                     }`}>
-                      {ref.priority} PRIORITY
+                      {isCritical ? '🔴 CRITICAL PRIORITY' : '🟡 URGENT PRIORITY'}
                     </span>
-                    {ref.reroutedCount > 0 && (
-                      <span className="eleven-badge bg-[#f4c5a8] text-[#0c0a09] border-[#f4c5a8] font-mono tabular-nums">
-                        ⚡ Rerouted ({ref.reroutedCount}x)
-                      </span>
-                    )}
+                    {getStatusBadge(ref.status)}
                   </div>
 
-                  <h3 className="text-sm font-medium text-[#292524] group-hover:text-[#0c0a09] transition-colors truncate">
-                    {ref.requirementSummary}
-                  </h3>
-
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-[#777169]">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-[#a8a29e]" aria-hidden="true" />
-                      <span>From: <strong className="text-[#292524]">{ref.originHospitalName}</strong></span>
-                    </div>
-                    <ChevronRight className="w-3 h-3 text-[#d6d3d1]" aria-hidden="true" />
-                    <div className="flex items-center gap-1">
-                      <Building2 className="w-3.5 h-3.5 text-[#292524]" aria-hidden="true" />
-                      <span>To: <strong className="text-[#0c0a09] font-bold">{ref.targetHospitalName}</strong></span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 border-t lg:border-t-0 border-[#f0efed] pt-3 lg:pt-0 flex-shrink-0">
                   {ref.ambulance && (
-                    <div className="text-right text-xs">
-                      <div className="flex items-center gap-1 font-bold text-[#292524] justify-end">
-                        <Ambulance className="w-3.5 h-3.5 text-[#292524]" aria-hidden="true" />
-                        <span className="font-mono tabular-nums">{ref.ambulance.id} ({ref.ambulance.type})</span>
-                      </div>
-                      <p className="text-[11px] text-[#777169]">Driver: {ref.ambulance.driverName}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-[#292524] font-mono font-bold">
+                      <Ambulance className="w-3.5 h-3.5 text-[#292524]" aria-hidden="true" />
+                      <span>{ref.ambulance.id} ({ref.ambulance.type})</span>
                     </div>
                   )}
+                </div>
 
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleOpenDetail(ref); }}
-                    aria-label={`View detail for referral #${ref.patientRefCode}`}
-                    className="eleven-button eleven-button-secondary text-xs py-2 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
-                  >
-                    <Eye className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>View Detail</span>
-                  </button>
+                {/* 2. Patient Condition / Diagnosis (What's wrong with the patient?) */}
+                <h3 className="text-base font-bold text-[#0c0a09] leading-snug group-hover:text-[#2563eb] transition-colors">
+                  {ref.requirementSummary}
+                </h3>
+
+                {/* 3. Required Resources Chips (What resource is needed?) */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-mono font-bold text-[#777169] uppercase tracking-wider block">
+                    Required Resources:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(ref.requiredResources || ['ICU_BED', 'VENTILATOR']).map((r, i) => (
+                      <span key={`res-${i}`} className="px-2.5 py-1 rounded-xl bg-[#292524] text-white font-mono text-xs font-bold shadow-2xs">
+                        [{r.replace('_BED', '').replace('_', ' ')}]
+                      </span>
+                    ))}
+                    {(ref.requiredCapabilities || ['NEUROSURGERY', 'CT_SCAN']).map((c, i) => (
+                      <span key={`cap-${i}`} className="px-2.5 py-1 rounded-xl bg-[#a8c8e8]/30 text-[#0c0a09] border border-[#a8c8e8] font-mono text-xs font-bold shadow-2xs">
+                        [{c.replace('_', ' ')}]
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Primary Problem Alert (If Destination Hospital lost capacity) */}
+                {isRerouting && (
+                  <div className="bg-[#f4c5a8]/30 border border-[#f4c5a8] p-3 rounded-2xl flex items-center justify-between text-xs text-[#0c0a09]">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-[#d97706] flex-shrink-0 animate-bounce" aria-hidden="true" />
+                      <span>
+                        <strong>⚠ Destination hospital ({ref.targetHospitalName}) lost capacity:</strong> [ICU / Ventilator Unavailable]
+                      </span>
+                    </div>
+                    <span className="font-mono text-[10px] bg-[#f4c5a8] text-[#0c0a09] font-bold px-2 py-0.5 rounded-full">
+                      Auto-Rerouting
+                    </span>
+                  </div>
+                )}
+
+                {/* 5. Transfer Route & Doctor Actions */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[#f0efed]">
+                  <div className="flex items-center gap-2 text-xs text-[#777169]">
+                    <span className="font-mono font-bold text-[#4e4e4e]">Transfer:</span>
+                    <span className="font-semibold text-[#292524]">{ref.originHospitalName}</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#d6d3d1]" aria-hidden="true" />
+                    <span className="font-extrabold text-[#0c0a09]">{ref.targetHospitalName}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isRerouting && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleOpenDetail(ref); }}
+                        className="eleven-button eleven-button-primary text-xs py-1.5 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
+                      >
+                        <span>Approve Redirect</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleOpenDetail(ref); }}
+                      aria-label={`View detail for referral #${ref.patientRefCode}`}
+                      className="eleven-button eleven-button-secondary text-xs py-1.5 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
+                    >
+                      <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>View Details</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -237,6 +274,24 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
                 <div>
                   <h4 className="font-bold">AUTO RE-ROUTING IN PROGRESS</h4>
                   <p className="text-[#4e4e4e]">Capacity lost at destination. Recalculating candidate route from live ambulance GPS coordinates…</p>
+                </div>
+              </div>
+            )}
+
+            {/* Ambulance & Driver Telemetry */}
+            {selectedReferral.ambulance && (
+              <div className="bg-[#fafafa] p-4 rounded-2xl border border-[#e7e5e4] flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center gap-2">
+                  <Ambulance className="w-5 h-5 text-[#292524]" />
+                  <div>
+                    <span className="text-[#777169] text-[10px] block">Assigned Transport Unit:</span>
+                    <p className="font-bold text-[#0c0a09]">{selectedReferral.ambulance.id} ({selectedReferral.ambulance.type})</p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[#777169] text-[10px] block">Dispatched Driver:</span>
+                  <p className="font-bold text-[#292524]">{selectedReferral.ambulance.driverName} ({selectedReferral.ambulance.driverPhone || '+91-99887-11223'})</p>
                 </div>
               </div>
             )}
