@@ -133,6 +133,96 @@ function DeliveryLiveMap({ referral }) {
   );
 }
 
+const DEMO_SENDING_REFERRALS = [
+  {
+    id: 'demo-send-1',
+    patientRefCode: '8941',
+    status: 'IN_TRANSIT',
+    requirementSummary: 'Acute Traumatic Brain Injury',
+    requiredCapabilities: ['NEUROSURGERY', 'CT_SCAN'],
+    requiredResources: ['ICU_BED', 'VENTILATOR'],
+    originHospitalId: 'hosp-a',
+    originHospitalName: 'District Hospital Central',
+    targetHospitalId: 'hosp-b',
+    targetHospitalName: 'City Super Specialty Hospital',
+    ambulance: { id: 'AMB-101', driver: 'Rajesh Verma (ALS)' },
+    missingResourcesText: 'District hospital missing [Neurosurgery]'
+  },
+  {
+    id: 'demo-send-2',
+    patientRefCode: '4412',
+    status: 'RE_ROUTING',
+    requirementSummary: 'Severe 40% Thermal Burn & Airway Inhalation',
+    requiredCapabilities: ['BURN_UNIT', 'PLASTIC_SURGERY'],
+    requiredResources: ['BURN_ICU', 'VENTILATOR'],
+    originHospitalId: 'hosp-a',
+    originHospitalName: 'District Hospital Central',
+    targetHospitalId: 'hosp-c',
+    targetHospitalName: 'Apex Trauma & Neurosurgery Institute',
+    ambulance: { id: 'AMB-208', driver: 'Vikram Sharma (Burn Desk)' },
+    missingResourcesText: 'Target hospital lost: [Burn ICU Bed]'
+  },
+  {
+    id: 'demo-send-3',
+    patientRefCode: '9021',
+    status: 'IN_TRANSIT',
+    requirementSummary: 'Pediatric Acute Respiratory Failure',
+    requiredCapabilities: ['PEDIATRICS', 'HFNC'],
+    requiredResources: ['PICU_BED', 'VENTILATOR'],
+    originHospitalId: 'hosp-a',
+    originHospitalName: 'District Hospital Central',
+    targetHospitalId: 'hosp-b',
+    targetHospitalName: 'City Super Specialty Hospital',
+    ambulance: { id: 'AMB-305', driver: 'Sunil Kumar (Picu Support)' },
+    missingResourcesText: 'District hospital missing [PICU Unit]'
+  }
+];
+
+const DEMO_RECEIVING_REFERRALS = [
+  {
+    id: 'demo-recv-1',
+    patientRefCode: '8941',
+    status: 'IN_TRANSIT',
+    requirementSummary: 'Acute Traumatic Brain Injury',
+    requiredCapabilities: ['NEUROSURGERY', 'CT_SCAN'],
+    requiredResources: ['ICU_BED', 'VENTILATOR'],
+    originHospitalId: 'hosp-a',
+    originHospitalName: 'District Hospital Central',
+    targetHospitalId: 'hosp-b',
+    targetHospitalName: 'City Super Specialty Hospital',
+    ambulance: { id: 'AMB-101', driver: 'Rajesh Verma (ALS)' },
+    missingResourcesText: 'District hospital missing [Neurosurgery]'
+  },
+  {
+    id: 'demo-recv-2',
+    patientRefCode: '5521',
+    status: 'ACCEPTED',
+    requirementSummary: 'Acute Anterior STEMI with Cardiogenic Shock',
+    requiredCapabilities: ['CARDIOLOGY', 'CATH_LAB'],
+    requiredResources: ['ICU_BED', 'DEFIBRILLATOR'],
+    originHospitalId: 'hosp-d',
+    originHospitalName: 'Valley Community Desk',
+    targetHospitalId: 'hosp-b',
+    targetHospitalName: 'City Super Specialty Hospital',
+    ambulance: { id: 'AMB-204', driver: 'Suresh Patil (Cardiac)' },
+    missingResourcesText: 'Valley desk missing [Cath Lab]'
+  },
+  {
+    id: 'demo-recv-3',
+    patientRefCode: '3019',
+    status: 'IN_TRANSIT',
+    requirementSummary: 'Severe Multiple Poly-Trauma & Femur Fracture',
+    requiredCapabilities: ['TRAUMA_OT', 'ORTHOPEDIC_SURGEON'],
+    requiredResources: ['ICU_BED', 'BLOOD_BANK'],
+    originHospitalId: 'hosp-d',
+    originHospitalName: 'Peripheral Emergency Bay',
+    targetHospitalId: 'hosp-b',
+    targetHospitalName: 'City Super Specialty Hospital',
+    ambulance: { id: 'AMB-309', driver: 'Anil Deshmukh (Trauma)' },
+    missingResourcesText: 'Peripheral bay missing [Blood Bank Protocol]'
+  }
+];
+
 export function MainDashboard({ onNavigateToCriticalFind }) {
   const { referrals, isConnected, refreshAll, setLastNotification } = useWebSocket();
   const [selectedReferral, setSelectedReferral] = useState(null);
@@ -145,8 +235,11 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
   // Exclude 100% completed referrals from active queues so cards automatically remove when completed
   const activeReferrals = referrals.filter(r => r.status !== 'COMPLETED');
 
-  const sendingReferrals = activeReferrals.filter(r => r.originHospitalId === 'hosp-a' || r.originHospitalId === 'hosp-d');
-  const receivingReferrals = activeReferrals.filter(r => r.targetHospitalId === 'hosp-b' || r.targetHospitalId === 'hosp-c');
+  const realSending = activeReferrals.filter(r => r.originHospitalId === 'hosp-a' || r.originHospitalId === 'hosp-d');
+  const realReceiving = activeReferrals.filter(r => r.targetHospitalId === 'hosp-b' || r.targetHospitalId === 'hosp-c');
+
+  const sendingReferrals = realSending.length > 0 ? realSending : DEMO_SENDING_REFERRALS;
+  const receivingReferrals = realReceiving.length > 0 ? realReceiving : DEMO_RECEIVING_REFERRALS;
 
   const rawDisplayedReferrals = activeSubTab === 'sending' ? sendingReferrals : receivingReferrals;
 
