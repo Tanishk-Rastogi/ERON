@@ -17,6 +17,121 @@ import {
   Plus 
 } from 'lucide-react';
 
+function DeliveryLiveMap({ referral }) {
+  const origin = referral?.originHospitalName || 'District Hospital Central';
+  const target = referral?.targetHospitalName || 'City Super Specialty Hospital';
+  const ambId = referral?.ambulance?.id || 'AMB-101';
+  const driverName = referral?.ambulance?.driverName || 'Suresh Kumar';
+
+  return (
+    <div className="eleven-card overflow-hidden border-[#e7e5e4] shadow-sm font-sans space-y-0 bg-[#0c0a09] text-white rounded-2xl">
+      {/* Live Status Overlay Banner */}
+      <div className="bg-[#1c1917] px-4 py-3 border-b border-[#292524] flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
+            Live Delivery-Style GPS Map
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-mono">
+          <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 px-2.5 py-0.5 rounded-full font-bold">
+            ETA: 8 mins (4.2 km)
+          </span>
+          <span className="bg-[#292524] text-[#a8a29e] px-2.5 py-0.5 rounded-full font-semibold">
+            Speed: 52 km/h
+          </span>
+        </div>
+      </div>
+
+      {/* SVG Interactive Delivery Map Visualizer */}
+      <div className="relative h-60 w-full bg-[#0c0a09] overflow-hidden flex items-center justify-center p-4">
+        {/* Map Street Grid Background Pattern */}
+        <svg className="absolute inset-0 w-full h-full opacity-15" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="delivery-map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#delivery-map-grid)" />
+        </svg>
+
+        {/* Route Line SVG */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+          {/* Background Route Glow */}
+          <path
+            d="M 80 150 C 220 50, 360 210, 560 90"
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="6"
+            strokeOpacity="0.25"
+          />
+          {/* Animated Dashed Emergency Corridor Line */}
+          <path
+            d="M 80 150 C 220 50, 360 220, 560 90"
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="3"
+            strokeDasharray="8 6"
+            className="animate-pulse"
+          />
+        </svg>
+
+        {/* Pin 1: Origin Hospital */}
+        <div className="absolute left-[8%] bottom-[22%] flex flex-col items-center group z-10">
+          <div className="bg-emerald-600 text-white p-2 rounded-full shadow-lg border-2 border-white ring-4 ring-emerald-950">
+            <Building2 className="w-4 h-4" />
+          </div>
+          <div className="mt-1 bg-[#1c1917]/90 backdrop-blur-xs border border-[#292524] px-2 py-0.5 rounded-lg text-[10px] font-bold text-[#e7e5e4] font-mono shadow-md whitespace-nowrap">
+            FROM: {origin}
+          </div>
+        </div>
+
+        {/* Pin 2: Moving Ambulance Unit (Delivery Vehicle) */}
+        <div className="absolute left-[50%] top-[35%] flex flex-col items-center animate-bounce z-20">
+          <div className="bg-amber-500 text-[#0c0a09] p-2.5 rounded-full shadow-xl border-2 border-white ring-4 ring-amber-500/30">
+            <Ambulance className="w-5 h-5" />
+          </div>
+          <div className="mt-1 bg-amber-500 text-[#0c0a09] px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono shadow-lg flex items-center gap-1">
+            <span>{ambId}</span>
+            <span className="text-[9px] opacity-80">(ALS)</span>
+          </div>
+        </div>
+
+        {/* Pin 3: Destination Hospital */}
+        <div className="absolute right-[10%] top-[18%] flex flex-col items-center group z-10">
+          <div className="bg-blue-600 text-white p-2 rounded-full shadow-lg border-2 border-white ring-4 ring-blue-950">
+            <MapPin className="w-4 h-4" />
+          </div>
+          <div className="mt-1 bg-[#1c1917]/90 backdrop-blur-xs border border-[#292524] px-2 py-0.5 rounded-lg text-[10px] font-bold text-white font-mono shadow-md whitespace-nowrap">
+            TO: {target}
+          </div>
+        </div>
+      </div>
+
+      {/* Delivery App Driver & Unit Telemetry Footer Bar */}
+      <div className="bg-[#1c1917] p-3 border-t border-[#292524] grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+        <div>
+          <span className="text-[#a8a29e] text-[10px] block">Dispatched Unit:</span>
+          <p className="font-bold text-white truncate">{ambId}</p>
+        </div>
+        <div>
+          <span className="text-[#a8a29e] text-[10px] block">Driver On-Duty:</span>
+          <p className="font-bold text-emerald-400 truncate">{driverName}</p>
+        </div>
+        <div>
+          <span className="text-[#a8a29e] text-[10px] block">Emergency Lane:</span>
+          <p className="font-bold text-amber-400 truncate">Green Corridor Active</p>
+        </div>
+        <div>
+          <span className="text-[#a8a29e] text-[10px] block">Reserved ICU Ward:</span>
+          <p className="font-bold text-white truncate">Bed #ICU-04</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MainDashboard({ onNavigateToCriticalFind }) {
   const { referrals, isConnected, refreshAll, setLastNotification } = useWebSocket();
   const [selectedReferral, setSelectedReferral] = useState(null);
@@ -293,6 +408,9 @@ export function MainDashboard({ onNavigateToCriticalFind }) {
                 </div>
               </div>
             )}
+
+            {/* Delivery-App Live GPS Map */}
+            <DeliveryLiveMap referral={selectedReferral} />
 
             {/* Decrypted Clinical Packet */}
             <div className="space-y-3">
