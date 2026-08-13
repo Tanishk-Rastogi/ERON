@@ -29,7 +29,9 @@ export async function apiClient(endpoint, options = {}) {
   if (response.status === 401 || response.status === 403) {
     // Clear session and force reload to login
     localStorage.removeItem('eron_auth_session');
-    window.location.reload();
+    if (token) {
+      window.location.reload();
+    }
   }
 
   return response;
