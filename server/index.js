@@ -4,11 +4,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 import cors from 'cors';
+import * as Sentry from '@sentry/node';
 import { createApiRouter } from './routes.js';
 import { db } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+if (process.env.SENTRY_DSN) { Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 1.0 }); }
 
 const app = express();
 const PORT = process.env.PORT || 3001;

@@ -3,10 +3,33 @@ import { db } from './db.js';
 import { matchHospitals } from './matchingEngine.js';
 import { BedHoldService } from './bedHoldService.js';
 import { RerouteService } from './rerouteService.js';
-import { decryptPacket } from './packetEncryption.js';
+import { decryptPacket, encryptPacket } from './packetEncryption.js';
+import jwt from 'jsonwebtoken';
+import { auth } from './middleware/auth.js';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev';
 
 export function createApiRouter(broadcastFn) {
   const router = express.Router();
+
+  // 0. POST /api/auth/login - Login & Issue JWT
+  router.post('/auth/login', (req, res) => {
+    const { hospitalName, hospitalCode } = req.body;
+    // MVP mock validation
+    if (!hospitalName) return res.status(400).json({ error: 'Hospital Name required' });
+    
+    // Attempt to map name to seeded hospital (hosp-a, hosp-b, etc.)
+    const h = db.getHospitals().find(h => h.name.toLowerCase().includes(hospitalName.toLowerCase().split(' ')[0]));
+    const hospitalId = h ? h.id : 'hosp-a'; // fallback for demo if not found
+
+    const token = jwt.sign({ 
+      hospitalId, 
+      hospitalName, 
+      role: 'DOCTOR' 
+    }, JWT_SECRET, { expiresIn: '8h' });
+    
+    res.json({ token, hospitalId, hospitalName, role: 'DOCTOR' });
+  });
 
   // 1. GET /api/hospitals — Fetch all hospitals with live capacity & capabilities
   router.get('/hospitals', (req, res) => {
@@ -22,7 +45,7 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 3. POST /api/hospitals/:id/capacity — Adjust capacity (+/- counter or exact)
-  router.post('/hospitals/:id/capacity', (req, res) => {
+  router.post('/hospitals/:id/capacity', auth(['DOCTOR', 'ADMIN']), (req, res) => {
     const { resourceType, delta, exactCount, staffId } = req.body;
     const hospitalId = req.params.id;
 
@@ -67,8 +90,9 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 4. POST /api/referrals/match — Calculate ranked candidates before creation
-  router.post('/referrals/match', (req, res) => {
-    const { requiredCapabilities, requiredResources, originHospitalId, priority } = req.body;
+  router.post('/referrals/match', auth(), (req, res) => {
+    const { requiredCapabilities, requiredResources, priority } = req.body;
+    const originHospitalId = req.user.hospitalId;
     
     const originHosp = db.getHospitalById(originHospitalId);
     const originLat = originHosp ? originHosp.lat : 12.9716;
@@ -86,7 +110,7 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 5. POST /api/referrals — Create referral and notify target hospital
-  router.post('/referrals', (req, res) => {
+  router.post('/referrals', auth(), (req, res) => {
     const {
       originHospitalId,
       targetHospitalId,
@@ -104,7 +128,7 @@ export function createApiRouter(broadcastFn) {
     const newReferral = {
       id: refId,
       patientRefCode,
-      originHospitalId,
+      originHospitalId: originHospitalId || req.user.hospitalId,
       targetHospitalId: targetHospitalId || null,
       acceptedHospitalId: targetHospitalId || null,
       createdByStaffId: createdByStaffId || 'user-staff-1',
@@ -136,7 +160,8 @@ export function createApiRouter(broadcastFn) {
 
     // Encrypt clinical packet if provided
     if (patientData) {
-      const encrypted = packetEncryption(patientData);
+      
+      const encrypted = encryptPacket(patientData);
       db.referralPackets.push({
         id: `pkt-${Date.now()}`,
         referralId: refId,
@@ -157,28 +182,28 @@ export function createApiRouter(broadcastFn) {
     res.status(201).json(enriched);
   });
 
-  // Helper for inline packet encryption if not imported
-  function packetEncryption(data) {
-    const { encryptPacket } = require('./packetEncryption.js');
-    return encryptPacket(data);
-  }
-
   // 6. GET /api/referrals — List referrals
-  router.get('/referrals', (req, res) => {
+  router.get('/referrals', auth(), (req, res) => {
     res.json(db.getReferrals());
   });
 
   // 7. GET /api/referrals/:id — Single referral
-  router.get('/referrals/:id', (req, res) => {
+  router.get('/referrals/:id', auth(), (req, res) => {
     const ref = db.getReferralById(req.params.id);
     if (!ref) return res.status(404).json({ error: 'Referral not found' });
     res.json(ref);
   });
 
   // 8. POST /api/referrals/:id/accept — Receiving hospital accepts/confirms
-  router.post('/referrals/:id/accept', (req, res) => {
+  router.post('/referrals/:id/accept', auth(), (req, res) => {
     const ref = db.referrals.find(r => r.id === req.params.id);
     if (!ref) return res.status(404).json({ error: 'Referral not found' });
+
+    // Validate bed availability synchronously
+    const holdRes = BedHoldService.placeHold(ref.targetHospitalId, ref.requiredResources, ref.id);
+    if (!holdRes.success) {
+      return res.status(409).json({ error: holdRes.message });
+    }
 
     ref.status = 'ACCEPTED';
     ref.acceptedHospitalId = ref.targetHospitalId;
@@ -201,7 +226,7 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 9. POST /api/referrals/:id/assign-ambulance — Assign ambulance & set status to IN_TRANSIT
-  router.post('/referrals/:id/assign-ambulance', (req, res) => {
+  router.post('/referrals/:id/assign-ambulance', auth(), (req, res) => {
     const { ambulanceId } = req.body;
     const ref = db.referrals.find(r => r.id === req.params.id);
     if (!ref) return res.status(404).json({ error: 'Referral not found' });
@@ -235,7 +260,7 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 10. POST /api/referrals/:id/handover — Complete physical handoff
-  router.post('/referrals/:id/handover', (req, res) => {
+  router.post('/referrals/:id/handover', auth(), (req, res) => {
     const ref = db.referrals.find(r => r.id === req.params.id);
     if (!ref) return res.status(404).json({ error: 'Referral not found' });
 
@@ -263,7 +288,15 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 11. GET /api/referrals/:id/packet — Fetch decrypted clinical handoff packet
-  router.get('/referrals/:id/packet', (req, res) => {
+  router.get('/referrals/:id/packet', auth(), (req, res) => {
+    const ref = db.referrals.find(r => r.id === req.params.id);
+    if (!ref) return res.status(404).json({ error: 'Referral not found' });
+    
+    // RBAC: Only origin or target hospital can view packet
+    if (req.user.hospitalId !== ref.originHospitalId && req.user.hospitalId !== ref.targetHospitalId) {
+      return res.status(403).json({ error: 'Forbidden: You do not have access to this clinical packet' });
+    }
+
     const packetRecord = db.getPacketForReferral(req.params.id);
     if (!packetRecord) {
       return res.status(404).json({ error: 'No clinical packet found for this referral' });
@@ -288,7 +321,7 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 12. POST /api/referrals/simulate-capacity-loss — DEMO CENTERPIECE TRIGGER!
-  router.post('/referrals/simulate-capacity-loss', (req, res) => {
+  router.post('/referrals/simulate-capacity-loss', auth(), (req, res) => {
     const { referralId } = req.body;
     const targetRefId = referralId || (db.referrals[0] ? db.referrals[0].id : null);
 
@@ -378,7 +411,7 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 14. GET /api/analytics/district — Control Room Aggregate Dashboard Data
-  router.get('/analytics/district', (req, res) => {
+  router.get('/analytics/district', auth(), (req, res) => {
     const referrals = db.getReferrals();
     const active = referrals.filter(r => !['COMPLETED', 'CANCELLED'].includes(r.status));
     const rerouted = referrals.filter(r => (r.reroutedCount || 0) > 0);
@@ -413,19 +446,25 @@ export function createApiRouter(broadcastFn) {
   });
 
   // 15. GET /api/threads — Fetch all messaging channels/threads
-  router.get('/threads', (req, res) => {
+  router.get('/threads', auth(), (req, res) => {
     res.json(db.getThreads());
   });
 
   // 16. GET /api/messages — Fetch messages for threadId
-  router.get('/messages', (req, res) => {
+  router.get('/messages', auth(), (req, res) => {
     const threadId = req.query.threadId;
     const msgs = db.getMessages(threadId);
     res.json(msgs);
   });
 
-  // 17. POST /api/messages — Send chat/template message
-  router.post('/messages', (req, res) => {
+  // 17. POST /api/demo/reset - Resets the in-memory database to seed state
+  router.post('/demo/reset', (req, res) => {
+    db.seed();
+    res.json({ success: true, message: 'Database reset to seed state.' });
+  });
+
+  // 18. POST /api/messages — Send chat/template message
+  router.post('/messages', auth(), (req, res) => {
     const newMsg = db.addMessage(req.body);
 
     if (broadcastFn) {
@@ -439,8 +478,8 @@ export function createApiRouter(broadcastFn) {
     res.status(201).json(newMsg);
   });
 
-  // 18. POST /api/messages/read — Mark thread messages as read
-  router.post('/messages/read', (req, res) => {
+  // 19. POST /api/messages/read - Mark thread messages as read
+  router.post('/messages/read', auth(), (req, res) => {
     const { threadId, userId } = req.body;
     const result = db.markMessagesRead(threadId, userId);
 

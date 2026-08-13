@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiClient } from '../utils/apiClient.js';
 import { useWebSocket } from '../context/WebSocketContext';
 import { 
   Building2, 
@@ -25,7 +26,7 @@ export function ReceivingTab({ onNavigateToCapacity }) {
     setLoadingPacket(true);
 
     try {
-      const res = await fetch(`/api/referrals/${ref.id}/packet`);
+      const res = await apiClient(`/api/referrals/${ref.id}/packet`);
       if (res.ok) {
         const data = await res.json();
         setPacketData(data.decryptedPayload);
@@ -39,7 +40,7 @@ export function ReceivingTab({ onNavigateToCapacity }) {
 
   const handleCompleteHandover = async (refId) => {
     try {
-      await fetch(`/api/referrals/${refId}/handover`, {
+      await apiClient(`/api/referrals/${refId}/handover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ staffId: 'user-admin-b' })
@@ -210,3 +211,4 @@ export function ReceivingTab({ onNavigateToCapacity }) {
     </div>
   );
 }
+

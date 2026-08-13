@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { apiClient } from './utils/apiClient.js';
 
 const WebSocketContext = createContext(null);
 
@@ -15,10 +16,10 @@ export function WebSocketProvider({ children }) {
   const fetchInitialData = async () => {
     try {
       const [hospRes, refRes, threadsRes, msgRes] = await Promise.all([
-        fetch('/api/hospitals'),
-        fetch('/api/referrals'),
-        fetch('/api/threads'),
-        fetch('/api/messages')
+        apiClient('/api/hospitals'),
+        apiClient('/api/referrals'),
+        apiClient('/api/threads'),
+        apiClient('/api/messages')
       ]);
 
       if (hospRes.ok) setHospitals(await hospRes.json());
@@ -141,7 +142,7 @@ export function WebSocketProvider({ children }) {
 
   const sendChatMessage = async (msgData) => {
     try {
-      const res = await fetch('/api/messages', {
+      const res = await apiClient('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(msgData)
@@ -174,7 +175,7 @@ export function WebSocketProvider({ children }) {
 
   const markMessagesRead = async (threadId, userId) => {
     try {
-      await fetch('/api/messages/read', {
+      await apiClient('/api/messages/read', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ threadId, userId })
@@ -208,3 +209,4 @@ export function WebSocketProvider({ children }) {
 export function useWebSocket() {
   return useContext(WebSocketContext);
 }
+

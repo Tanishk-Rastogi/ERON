@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiClient } from '../utils/apiClient.js';
 import { useWebSocket } from '../context/WebSocketContext';
 import { 
   BarChart3, 
@@ -19,7 +20,7 @@ export function ControlRoomAnalytics() {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/analytics/district');
+      const res = await apiClient('/api/analytics/district');
       if (res.ok) {
         const data = await res.json();
         setAnalytics(data);
@@ -179,3 +180,4 @@ export function ControlRoomAnalytics() {
     </div>
   );
 }
+

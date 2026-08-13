@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiClient } from '../utils/apiClient.js';
 import { useWebSocket } from '../context/WebSocketContext';
 import { 
   Play, 
@@ -86,7 +87,7 @@ export function FlowTester({ onSelectPerspective, onOpenPacketModal }) {
     try {
       if (stepNum === 1) {
         logMsg('Creating emergency referral via POST /api/referrals...');
-        const res = await fetch('/api/referrals', {
+        const res = await apiClient('/api/referrals', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -129,7 +130,7 @@ export function FlowTester({ onSelectPerspective, onOpenPacketModal }) {
       } else if (stepNum === 3) {
         const refId = testReferral?.id || 'ref-1001';
         logMsg(`Accepting referral ${refId} via POST /api/referrals/${refId}/accept...`);
-        const res = await fetch(`/api/referrals/${refId}/accept`, {
+        const res = await apiClient(`/api/referrals/${refId}/accept`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ staffId: 'user-admin-b' })
@@ -149,7 +150,7 @@ export function FlowTester({ onSelectPerspective, onOpenPacketModal }) {
       } else if (stepNum === 5) {
         const refId = testReferral?.id || 'ref-1001';
         logMsg(`Assigning ALS Ambulance via POST /api/referrals/${refId}/assign-ambulance...`);
-        const res = await fetch(`/api/referrals/${refId}/assign-ambulance`, {
+        const res = await apiClient(`/api/referrals/${refId}/assign-ambulance`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ambulanceId: 'amb-101', staffId: 'user-disp-1' })
@@ -169,7 +170,7 @@ export function FlowTester({ onSelectPerspective, onOpenPacketModal }) {
         }
       } else if (stepNum === 6) {
         logMsg('Marking thread messages as READ via POST /api/messages/read...');
-        const res = await fetch('/api/messages/read', {
+        const res = await apiClient('/api/messages/read', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ threadId: 'thread-ref-1001', userId: 'user-admin-b' })
@@ -187,7 +188,7 @@ export function FlowTester({ onSelectPerspective, onOpenPacketModal }) {
           hospitalName: 'District-01 Command HQ'
         });
         logMsg('Fetching District Control Room analytics via GET /api/analytics/district...');
-        const res = await fetch('/api/analytics/district');
+        const res = await apiClient('/api/analytics/district');
         if (res.ok) {
           const data = await res.json();
           logMsg('End-to-End Referral Lifecycle Flow test completed successfully!', data);
@@ -307,3 +308,4 @@ export function FlowTester({ onSelectPerspective, onOpenPacketModal }) {
     </div>
   );
 }
+

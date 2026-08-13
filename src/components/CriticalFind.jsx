@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiClient } from '../utils/apiClient.js';
 import { useWebSocket } from '../context/WebSocketContext';
 import { 
   Compass, 
@@ -39,13 +40,13 @@ export function CriticalFind({ onReferralCreated }) {
   const fetchMatches = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/referrals/match', {
+      const res = await apiClient('/api/referrals/match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           requiredCapabilities: selectedCapabilities,
           requiredResources: selectedResources,
-          originHospitalId: 'hosp-a',
+          
           priority
         })
       });
@@ -81,11 +82,11 @@ export function CriticalFind({ onReferralCreated }) {
     setCreating(true);
 
     try {
-      const res = await fetch('/api/referrals', {
+      const res = await apiClient('/api/referrals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          originHospitalId: 'hosp-a',
+          
           targetHospitalId: selectedCandidate.hospitalId,
           requirementSummary: patientSummary,
           requiredCapabilities: selectedCapabilities,
@@ -382,3 +383,4 @@ export function CriticalFind({ onReferralCreated }) {
     </div>
   );
 }
+

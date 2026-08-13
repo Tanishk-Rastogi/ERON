@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiClient } from '../utils/apiClient.js';
 import { MessageSquareText, Send, X, CheckCircle2 } from 'lucide-react';
 
 export function SMSModal({ isOpen, onClose }) {
@@ -14,7 +15,7 @@ export function SMSModal({ isOpen, onClose }) {
     setResponse(null);
 
     try {
-      const res = await fetch('/api/sms/webhook', {
+      const res = await apiClient('/api/sms/webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -121,3 +122,4 @@ export function SMSModal({ isOpen, onClose }) {
     </div>
   );
 }
+
