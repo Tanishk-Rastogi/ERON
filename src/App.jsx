@@ -5,6 +5,7 @@ import { MainDashboard } from './components/MainDashboard';
 import { CriticalFind } from './components/CriticalFind';
 import { ReceivingTab } from './components/ReceivingTab';
 import { CapacityPanel } from './components/CapacityPanel';
+import { TransferTab } from './components/TransferTab';
 import { ControlRoomAnalytics } from './components/ControlRoomAnalytics';
 import { DemoCenterpiece } from './components/DemoCenterpiece';
 import { MessagingCenter } from './components/MessagingCenter';
@@ -128,6 +129,9 @@ function AppContent() {
           </div>
         )}
 
+        {activeTab === 'transfer' && (
+          <TransferTab />
+        )}
         {activeTab === 'receiving' && (
           <ReceivingTab onNavigateToCapacity={() => setActiveTab('capacity')} />
         )}

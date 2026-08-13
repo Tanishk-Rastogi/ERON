@@ -5,12 +5,13 @@ import {
   Compass, 
   Bed, 
   LayoutDashboard,
-  MessageSquareText
+  ArrowRightLeft
 } from 'lucide-react';
 
 export function Header({ activeTab, setActiveTab, authSession, onLogout }) {
   const navItems = [
     { id: 'dashboard', label: 'Main Dashboard', icon: LayoutDashboard },
+    { id: 'transfer', label: 'Transfer', icon: ArrowRightLeft },
     { id: 'receiving', label: 'Receiving Tab', icon: Building2 },
     { id: 'capacity', label: 'Capacity Panel', icon: Bed }
   ];
