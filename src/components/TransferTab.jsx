@@ -15,11 +15,11 @@ export function TransferTab() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-white border border-[#d6d3d1] rounded-2xl py-4 pl-12 pr-10 text-base text-[#0c0a09] font-medium placeholder-[#777169] focus:outline-none focus:border-[#292524] focus:ring-2 focus:ring-[#292524]/20 transition-all shadow-sm hover:shadow-md"
         />
-        <Search className="w-5 h-5 text-[#777169] absolute left-4 top-4.5 pointer-events-none" />
+        <Search className="w-5 h-5 text-[#777169] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="absolute right-4 top-4 text-sm text-[#777169] hover:text-[#0c0a09] p-1"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#777169] hover:text-[#0c0a09] p-1 flex items-center justify-center"
             title="Clear search"
           >
             ✕
