@@ -8,8 +8,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
-        serif: ['Waldenburg', 'Georgia', 'serif'],
+        mono: ['"Outfit"', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        serif: ['"Plus Jakarta Sans"', 'Georgia', 'serif'],
       },
       colors: {
         eleven: {

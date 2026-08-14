@@ -122,15 +122,15 @@ function broadcast(payload) {
 // Mount REST API Router
 app.use('/api', createApiRouter(broadcast));
 
+// Healthcheck endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), clientsCount: clients.size });
+});
+
 // Serve SPA fallback for client routes
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/ws')) return next();
   res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
-
-// Healthcheck endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), clientsCount: clients.size });
 });
 
 

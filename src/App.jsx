@@ -16,7 +16,7 @@ import { AuthPage } from './components/AuthPage';
 import { Bell, X, ShieldCheck } from 'lucide-react';
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState('transfer');
+  const [activeTab, setActiveTab] = useState('receiving');
   const [authSession, setAuthSession] = useState(() => {
     try {
       const saved = localStorage.getItem('eron_auth_session');
@@ -155,7 +155,7 @@ function AppContent() {
 
       {/* Clinical Packet Decryption Modal */}
       {activePacketModalId && (
-        <div className="fixed inset-0 z-50 bg-[#0c0a09]/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans">
+        <div className="fixed inset-0 z-[9999] bg-[#0c0a09]/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans">
           <div className="eleven-card w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 space-y-5 bg-white border-[#d6d3d1] shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#e7e5e4] pb-3">
               <div className="flex items-center gap-2">
