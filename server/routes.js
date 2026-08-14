@@ -12,23 +12,85 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_local_dev';
 export function createApiRouter(broadcastFn) {
   const router = express.Router();
 
-  // 0. POST /api/auth/login - Login & Issue JWT
+  // 0. POST /api/auth/login - Login & Dynamic Hospital Registration
   router.post('/auth/login', (req, res) => {
-    const { hospitalName, hospitalCode } = req.body;
-    // MVP mock validation
+    const { hospitalName, hospitalCode, address, lat, lng } = req.body;
     if (!hospitalName) return res.status(400).json({ error: 'Hospital Name required' });
+
+    const trimmedName = hospitalName.trim();
     
-    // Attempt to map name to seeded hospital (hosp-a, hosp-b, etc.)
-    const h = db.getHospitals().find(h => h.name.toLowerCase().includes(hospitalName.toLowerCase().split(' ')[0]));
-    const hospitalId = h ? h.id : 'hosp-a'; // fallback for demo if not found
+    // Find existing hospital or register a new custom hospital
+    let hosp = db.getHospitals().find(h => h.name.toLowerCase() === trimmedName.toLowerCase());
+
+    if (!hosp) {
+      // Register new custom hospital facility
+      const newId = `hosp-${Date.now()}`;
+      hosp = {
+        id: newId,
+        name: trimmedName,
+        type: 'TERTIARY',
+        lat: parseFloat(lat) || 12.9716,
+        lng: parseFloat(lng) || 77.5946,
+        address: address || 'Real-time Registered Hospital Facility',
+        districtCode: 'DIST-01',
+        contactPhone: '+91-98765-00999',
+        dataSourceTier: 'MANUAL',
+        lastCapacityUpdateAt: new Date().toISOString(),
+        isActive: true
+      };
+
+      db.hospitals.push(hosp);
+
+      // Seed standard emergency capabilities & resources
+      const initialResources = [
+        { resourceType: 'ICU_BED', availableCount: 10, totalCapacity: 20 },
+        { resourceType: 'VENTILATOR', availableCount: 5, totalCapacity: 10 },
+        { resourceType: 'CT_SCAN', availableCount: 2, totalCapacity: 3 },
+        { resourceType: 'TRAUMA_OT', availableCount: 3, totalCapacity: 5 },
+        { resourceType: 'BLOOD_BANK', availableCount: 25, totalCapacity: 50 }
+      ];
+
+      initialResources.forEach(resItem => {
+        db.resources.push({
+          id: `res-${newId}-${resItem.resourceType}`,
+          hospitalId: newId,
+          ...resItem,
+          updatedAt: new Date().toISOString(),
+          updatedByStaffId: 'staff-admin'
+        });
+      });
+
+      if (broadcastFn) {
+        broadcastFn({
+          type: 'HOSPITAL_ADDED',
+          hospital: hosp,
+          message: `New hospital facility registered: ${trimmedName}`
+        });
+      }
+    } else if (address || lat) {
+      // Update existing hospital address / location if specified
+      if (address) hosp.address = address;
+      if (lat && lng) {
+        hosp.lat = parseFloat(lat);
+        hosp.lng = parseFloat(lng);
+      }
+    }
 
     const token = jwt.sign({ 
-      hospitalId, 
-      hospitalName, 
+      hospitalId: hosp.id, 
+      hospitalName: hosp.name, 
       role: 'DOCTOR' 
     }, JWT_SECRET, { expiresIn: '8h' });
     
-    res.json({ token, hospitalId, hospitalName, role: 'DOCTOR' });
+    res.json({ 
+      token, 
+      hospitalId: hosp.id, 
+      hospitalName: hosp.name, 
+      address: hosp.address,
+      lat: hosp.lat,
+      lng: hosp.lng,
+      role: 'DOCTOR' 
+    });
   });
 
   // 1. GET /api/hospitals — Fetch all hospitals with live capacity & capabilities
