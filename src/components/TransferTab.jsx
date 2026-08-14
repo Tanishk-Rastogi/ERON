@@ -582,16 +582,7 @@ export function TransferTab() {
             <h1 className="text-xl font-extrabold text-[#0c0a09] tracking-tight">
               Emergency Patient Transfer & Hospital Matching
             </h1>
-            {activePatient && (
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono text-xs font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Active Patient: #{activePatient.patientRefCode}
-              </span>
-            )}
           </div>
-          <p className="text-xs text-[#777169] mt-1 font-medium">
-            Search destination hospitals by equipment & distance, view top 3 nearest options, and dispatch emergency transfer alerts.
-          </p>
         </div>
 
         <button
