@@ -8,6 +8,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useWebSocket } from '../context/WebSocketContext';
+import { apiClient } from '../utils/apiClient.js';
 
 const MASTER_RESOURCES = [
   { name: 'ICU', category: 'Beds & Care Units' },
@@ -510,9 +511,45 @@ export function TransferTab() {
     });
   };
 
-  const handleConfirmSendAlert = (hosp) => {
+  const handleConfirmSendAlert = async (hosp) => {
     setAlertSentHospitals(prev => ({ ...prev, [hosp.id]: true }));
     setSendAlertModalHosp(null);
+
+    // Read stored auth session if available
+    let originHospId = 'hosp-a';
+    try {
+      const saved = localStorage.getItem('eron_auth_session');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.hospitalId) originHospId = parsed.hospitalId;
+      }
+    } catch (err) {
+      console.warn('Auth session read error:', err);
+    }
+
+    try {
+      await apiClient('/api/referrals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          originHospitalId: originHospId,
+          targetHospitalId: hosp.id,
+          requirementSummary: `${activePatient.diagnosisSuspected} — Priority ${activePatient.priority}`,
+          requiredResources: activePatient.requiredEquipment,
+          priority: activePatient.priority,
+          patientData: {
+            patientName: activePatient.patientName,
+            patientAge: activePatient.patientAge,
+            patientSex: activePatient.patientSex,
+            diagnosisSuspected: activePatient.diagnosisSuspected,
+            referringDoctorName: activePatient.referringDoctorName,
+            vitals: { bp: '135/85', hr: 104, spo2: 95, rr: 22, temp: '98.6 F', gcs: 14 }
+          }
+        })
+      });
+    } catch (err) {
+      console.warn('Post referral API notice:', err);
+    }
 
     if (setLastNotification) {
       setLastNotification({

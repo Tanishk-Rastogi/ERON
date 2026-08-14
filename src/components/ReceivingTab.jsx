@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useWebSocket } from '../context/WebSocketContext';
+import { apiClient } from '../utils/apiClient.js';
 import { 
   Building2, 
   Clock, 
@@ -383,9 +384,17 @@ export function ReceivingTab({ preSelectedReferral }) {
   }, [preSelectedReferral]);
 
   // Handler: Accept Patient Request
-  const handleAcceptPatient = (ref) => {
+  const handleAcceptPatient = async (ref) => {
     ref.status = 'ACCEPTED';
     setAcceptedIds(prev => new Set([...prev, ref.id]));
+
+    try {
+      await apiClient(`/api/referrals/${ref.id}/accept`, {
+        method: 'POST'
+      });
+    } catch (err) {
+      console.warn('Accept referral API notice:', err);
+    }
     
     if (setLastNotification) {
       setLastNotification({
