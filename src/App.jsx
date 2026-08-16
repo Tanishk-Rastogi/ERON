@@ -13,6 +13,7 @@ import { RoleSwitcher } from './components/RoleSwitcher';
 import { FlowTester } from './components/FlowTester';
 import { SMSModal } from './components/SMSModal';
 import { AuthPage } from './components/AuthPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Bell, X, ShieldCheck } from 'lucide-react';
 
 function AppContent() {
@@ -40,12 +41,12 @@ function AppContent() {
   const [decryptedPacketData, setDecryptedPacketData] = useState(null);
   const [loadingPacket, setLoadingPacket] = useState(false);
 
-  const { lastNotification, setLastNotification } = useWebSocket();
+  const { lastNotification, setLastNotification, hospitals } = useWebSocket();
   const [preSelectedReceivingRef, setPreSelectedReceivingRef] = useState(null);
 
   const handleLogout = () => {
     localStorage.removeItem('eron_auth_session');
-    setAuthSession(null);
+    window.location.reload();
   };
 
   const handleOpenPacketModal = async (packetId = 'pkt-1') => {
@@ -128,16 +129,23 @@ function AppContent() {
         )}
 
         {activeTab === 'transfer' && (
-          <TransferTab />
+          <ErrorBoundary>
+            <TransferTab authSession={authSession} />
+          </ErrorBoundary>
         )}
         {activeTab === 'receiving' && (
-          <ReceivingTab 
-            preSelectedReferral={preSelectedReceivingRef}
-            onNavigateToCapacity={() => setActiveTab('capacity')} 
-          />
+          <ErrorBoundary>
+            <ReceivingTab 
+              preSelectedReferral={preSelectedReceivingRef}
+              onNavigateToCapacity={() => setActiveTab('capacity')}
+              authSession={authSession}
+            />
+          </ErrorBoundary>
         )}
         {activeTab === 'capacity' && (
-          <CapacityPanel />
+          <ErrorBoundary>
+            <CapacityPanel authSession={authSession} hospitals={hospitals} />
+          </ErrorBoundary>
         )}
         {activeTab === 'control-room' && (
           <ControlRoomAnalytics />

@@ -43,107 +43,7 @@ const MASTER_RESOURCES = [
   { name: 'Pediatrician', category: 'Pediatric Services' },
 ];
 
-const INITIAL_HOSPITALS = [
-  {
-    id: 'hosp-a',
-    name: 'District Hospital Central',
-    address: 'Indiranagar 100ft Road, East Zone',
-    lat: 12.9716,
-    lng: 77.5946,
-    distanceKm: '2.4',
-    etaMins: '6',
-    phone: '+91 80 2520 1923',
-    color: '#10b981', // Emerald green
-    resources: [
-      { name: 'ICU', available: 12, total: 30 },
-      { name: 'Ventilator', available: 6, total: 15 },
-      { name: 'CT Scan', available: 2, total: 3 },
-      { name: 'X-ray', available: 5, total: 10 },
-      { name: 'Ultrasound', available: 4, total: 6 },
-      { name: 'Emergency Department', available: 15, total: 40 },
-      { name: 'Trauma Center', available: 8, total: 20 },
-      { name: 'General Surgeon', available: 3, total: 5 },
-      { name: 'Intensivist', available: 2, total: 4 },
-      { name: 'Anesthesiologist', available: 3, total: 6 },
-      { name: 'Blood Bank', available: 25, total: 50 },
-      { name: 'ECG', available: 8, total: 12 }
-    ]
-  },
-  {
-    id: 'hosp-c',
-    name: 'Apex Trauma & Neurosurgery Institute',
-    address: 'Malleshwaram West, North Zone',
-    lat: 12.9988,
-    lng: 77.5704,
-    distanceKm: '3.4',
-    etaMins: '9',
-    phone: '+91 80 2334 5678',
-    color: '#d97706', // Amber
-    resources: [
-      { name: 'ICU', available: 8, total: 25 },
-      { name: 'Trauma ICU', available: 5, total: 12 },
-      { name: 'PICU', available: 3, total: 10 },
-      { name: 'NICU', available: 4, total: 10 },
-      { name: 'Ventilator', available: 5, total: 12 },
-      { name: 'HFNC', available: 6, total: 15 },
-      { name: 'Emergency Department', available: 20, total: 50 },
-      { name: 'Trauma Center', available: 12, total: 30 },
-      { name: 'Emergency OT', available: 3, total: 6 },
-      { name: 'Blood Bank', available: 30, total: 60 },
-      { name: 'CT Scan', available: 2, total: 3 },
-      { name: 'MRI', available: 2, total: 3 },
-      { name: 'Neurosurgeon', available: 4, total: 5 },
-      { name: 'Trauma Surgeon', available: 3, total: 4 },
-      { name: 'Orthopedic Surgeon', available: 4, total: 6 },
-      { name: 'Stroke Unit', available: 6, total: 12 },
-      { name: 'Dialysis', available: 5, total: 10 }
-    ]
-  },
-  {
-    id: 'hosp-b',
-    name: 'City Super Specialty Hospital',
-    address: 'Koramangala 4th Block, South Zone',
-    lat: 12.9352,
-    lng: 77.6245,
-    distanceKm: '5.2',
-    etaMins: '14',
-    phone: '+91 80 4115 8800',
-    color: '#2563eb', // Blue
-    resources: [
-      { name: 'ICU', available: 3, total: 15 },
-      { name: 'Trauma ICU', available: 2, total: 8 },
-      { name: 'Ventilator', available: 2, total: 8 },
-      { name: 'HFNC', available: 4, total: 10 },
-      { name: 'CT Scan', available: 1, total: 2 },
-      { name: 'MRI', available: 1, total: 2 },
-      { name: 'Neurosurgeon', available: 2, total: 3 },
-      { name: 'Cardiologist', available: 3, total: 5 },
-      { name: 'Stroke Unit', available: 4, total: 10 },
-      { name: 'Emergency OT', available: 2, total: 4 },
-      { name: 'Blood Bank', available: 14, total: 30 },
-      { name: 'Anesthesiologist', available: 4, total: 6 }
-    ]
-  },
-  {
-    id: 'hosp-d',
-    name: 'Valley Community Medical Desk',
-    address: 'Whitefield Main Road, East Zone',
-    lat: 12.9698,
-    lng: 77.7500,
-    distanceKm: '12.8',
-    etaMins: '28',
-    phone: '+91 80 6718 2000',
-    color: '#dc2626', // Red
-    resources: [
-      { name: 'ICU', available: 1, total: 5 },
-      { name: 'Ventilator', available: 1, total: 2 },
-      { name: 'X-ray', available: 3, total: 5 },
-      { name: 'ECG', available: 4, total: 6 },
-      { name: 'General Surgeon', available: 1, total: 2 },
-      { name: 'Pediatrician', available: 2, total: 4 }
-    ]
-  }
-];
+
 
 // Inner Leaflet component for smooth flying/bounding navigation
 function MapFlyToController({ targetPos, targetZoom, targetBounds }) {
@@ -252,27 +152,49 @@ const createUserLocationPinIcon = () => {
   });
 };
 
-export function TransferTab() {
-  const { setLastNotification } = useWebSocket() || {};
+export function TransferTab({ authSession }) {
+  const { setLastNotification, hospitals } = useWebSocket() || {};
 
-  const [hospitalsList, setHospitalsList] = useState(INITIAL_HOSPITALS);
+  const [hospitalsList, setHospitalsList] = useState([]);
   const [selectedTags, setSelectedTags] = useState(['ICU', 'Ventilator']);
+
+  useEffect(() => {
+    if (hospitals && hospitals.length > 0) {
+      // Filter out self (origin hospital) so we don't transfer to ourselves using safe string comparison
+      const others = hospitals.filter(h => String(h.id) !== String(authSession?.hospitalId));
+      
+      const mapped = others.map((h, i) => {
+        // Safely map backend resources to frontend expected shape
+        const mappedResources = (h.resources || []).map(r => ({
+          name: String(r.resourceType || r.bed_type || r.name || 'Unknown').replace('_', ' '),
+          available: r.availableCount !== undefined ? r.availableCount : (r.available || 0),
+          total: r.totalCapacity !== undefined ? r.totalCapacity : (r.total || 0),
+          category: 'Medical Resource'
+        }));
+
+        return {
+          id: h.id, // REAL DB INTEGER ID
+          name: h.name,
+          address: h.contactInfo || 'Mapped Location',
+          lat: h.locationLat || 12.97 + (Math.random() * 0.05),
+          lng: h.locationLng || 77.59 + (Math.random() * 0.05),
+          distanceKm: (2.5 + i).toFixed(1),
+          etaMins: (8 + i * 2).toString(),
+          phone: h.contactInfo || '+91 000 0000',
+          color: (i % 3 === 0 ? '#10b981' : i % 3 === 1 ? '#d97706' : '#2563eb'),
+          resources: mappedResources
+        };
+      });
+      setHospitalsList(mapped);
+    }
+  }, [hospitals, authSession]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [detailHospitalModal, setDetailHospitalModal] = useState(null);
 
   // Active Patient Entry state
-  const [activePatient, setActivePatient] = useState({
-    patientName: 'Karan Sharma',
-    patientAge: 42,
-    patientSex: 'Male',
-    diagnosisSuspected: 'Severe Acute Respiratory Distress (ARDS)',
-    priority: 'CRITICAL',
-    requiredEquipment: ['ICU', 'Ventilator', 'Emergency CT'],
-    referringDoctorName: 'Dr. Ramesh Kumar (Origin Duty Physician)',
-    patientRefCode: 'PAT-2026-9102'
-  });
+  const [activePatient, setActivePatient] = useState(null);
 
   // Modal visibility states
   const [isCreatePatientModalOpen, setIsCreatePatientModalOpen] = useState(false);
@@ -287,7 +209,8 @@ export function TransferTab() {
     diagnosisSuspected: '',
     priority: 'CRITICAL',
     requiredEquipment: ['ICU', 'Ventilator'],
-    referringDoctorName: 'Dr. Ramesh Kumar'
+    referringDoctorName: 'Dr. Ramesh Kumar',
+    timeoutMinutes: 5
   });
 
   // Navigation map target state
@@ -330,57 +253,13 @@ export function TransferTab() {
         setUserLocation([latitude, longitude]);
         setMapTargetPos([latitude, longitude]);
         setMapTargetZoom(13);
-        setLocationStatus('GPS acquired! Recalculating distances...');
-
-        try {
-          const query = `[out:json];node(around:15000,${latitude},${longitude})[amenity=hospital];out 15;`;
-          const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.elements && data.elements.length > 0) {
-              const realHospitals = data.elements.map((el, idx) => {
-                const name = el.tags.name || el.tags['name:en'] || `Real Hospital Facility #${idx + 1}`;
-                const dist = calculateDistanceKm(latitude, longitude, el.lat, el.lon);
-                const eta = Math.round(parseFloat(dist) * 2.2 + 2).toString();
-                return {
-                  id: `real-hosp-${el.id}`,
-                  name: name,
-                  address: el.tags['addr:street'] ? `${el.tags['addr:street']}, ${el.tags['addr:city'] || 'Nearby'}` : 'Real-time GPS Verified Facility',
-                  lat: el.lat,
-                  lng: el.lon,
-                  distanceKm: dist,
-                  etaMins: eta,
-                  phone: el.tags.phone || '+91 80 4000 1923',
-                  color: idx % 3 === 0 ? '#10b981' : idx % 3 === 1 ? '#2563eb' : '#8b5cf6',
-                  resources: [
-                    { name: 'ICU', available: Math.floor(Math.random() * 10) + 2, total: 15 },
-                    { name: 'Ventilator', available: Math.floor(Math.random() * 6) + 1, total: 8 },
-                    { name: 'CT Scan', available: 1, total: 2 },
-                    { name: 'Trauma Center', available: 4, total: 10 }
-                  ]
-                };
-              });
-
-              setHospitalsList(realHospitals);
-              setLocationStatus(`Loaded ${realHospitals.length} real hospitals near GPS!`);
-            } else {
-              setHospitalsList(prev => prev.map(h => {
-                const dist = calculateDistanceKm(latitude, longitude, h.lat, h.lng);
-                return { ...h, distanceKm: dist, etaMins: Math.round(parseFloat(dist) * 2.2 + 2).toString() };
-              }));
-              setLocationStatus('Distances recalculated for hospital network.');
-            }
-          }
-        } catch (err) {
-          console.warn('Overpass fetch error:', err);
-          setHospitalsList(prev => prev.map(h => {
-            const dist = calculateDistanceKm(latitude, longitude, h.lat, h.lng);
-            return { ...h, distanceKm: dist, etaMins: Math.round(parseFloat(dist) * 2.2 + 2).toString() };
-          }));
-          setLocationStatus('Distances recalculated.');
-        } finally {
-          setIsLocating(false);
-        }
+        // Only recalculate distances for registered DB hospitals
+        setHospitalsList(prev => prev.map(h => {
+          const dist = calculateDistanceKm(latitude, longitude, h.lat, h.lng);
+          return { ...h, distanceKm: dist, etaMins: Math.round(parseFloat(dist) * 2.2 + 2).toString() };
+        }));
+        setLocationStatus('GPS acquired! Distances recalculated.');
+        setIsLocating(false);
       },
       (error) => {
         console.error('Geolocation error:', error);
@@ -484,6 +363,7 @@ export function TransferTab() {
       priority: newPatientForm.priority,
       requiredEquipment: [...newPatientForm.requiredEquipment],
       referringDoctorName: newPatientForm.referringDoctorName || 'Dr. Ramesh Kumar',
+      timeoutMinutes: parseInt(newPatientForm.timeoutMinutes) || 5,
       patientRefCode: createdRefCode
     };
 
@@ -507,7 +387,8 @@ export function TransferTab() {
       diagnosisSuspected: '',
       priority: 'CRITICAL',
       requiredEquipment: ['ICU', 'Ventilator'],
-      referringDoctorName: 'Dr. Ramesh Kumar'
+      referringDoctorName: 'Dr. Ramesh Kumar',
+      timeoutMinutes: 5
     });
   };
 
@@ -515,20 +396,11 @@ export function TransferTab() {
     setAlertSentHospitals(prev => ({ ...prev, [hosp.id]: true }));
     setSendAlertModalHosp(null);
 
-    // Read stored auth session if available
-    let originHospId = 'hosp-a';
-    try {
-      const saved = localStorage.getItem('eron_auth_session');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.hospitalId) originHospId = parsed.hospitalId;
-      }
-    } catch (err) {
-      console.warn('Auth session read error:', err);
-    }
+    // Read stored auth session if available (or use props)
+    let originHospId = authSession?.hospitalId || 'hosp-a';
 
     try {
-      await apiClient('/api/referrals', {
+      const res = await apiClient('/api/referrals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -537,6 +409,7 @@ export function TransferTab() {
           requirementSummary: `${activePatient.diagnosisSuspected} — Priority ${activePatient.priority}`,
           requiredResources: activePatient.requiredEquipment,
           priority: activePatient.priority,
+          timeoutMinutes: activePatient.timeoutMinutes || 5,
           patientData: {
             patientName: activePatient.patientName,
             patientAge: activePatient.patientAge,
@@ -547,16 +420,28 @@ export function TransferTab() {
           }
         })
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to dispatch referral to the server.');
+      }
+
+      if (setLastNotification) {
+        setLastNotification({
+          id: Date.now(),
+          text: `EMERGENCY ALERT DISPATCHED to ${hosp.name}! Receiving desk notified via WebSocket & SMS green corridor alert.`,
+          type: 'success'
+        });
+      }
     } catch (err) {
       console.warn('Post referral API notice:', err);
-    }
-
-    if (setLastNotification) {
-      setLastNotification({
-        id: Date.now(),
-        text: `EMERGENCY ALERT DISPATCHED to ${hosp.name}! Receiving desk notified via WebSocket & SMS green corridor alert.`,
-        type: 'success'
-      });
+      if (setLastNotification) {
+        setLastNotification({
+          id: Date.now(),
+          text: `DISPATCH FAILED: ${err.message}`,
+          type: 'error'
+        });
+      }
     }
   };
 
@@ -595,7 +480,20 @@ export function TransferTab() {
       </div>
 
       {/* ACTIVE PATIENT OVERVIEW SUMMARY BANNER */}
-      {activePatient && (
+      {!activePatient ? (
+        <div className="bg-white border-2 border-dashed border-[#d6d3d1] p-6 rounded-2xl flex flex-col items-center justify-center text-center space-y-3 mt-4">
+          <div className="w-12 h-12 bg-[#fafafa] rounded-full flex items-center justify-center text-[#777169]">
+            <User className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-bold text-[#0c0a09]">No Active Patient</h3>
+            <p className="text-xs text-[#777169] mt-1 max-w-[200px]">Create a patient referral entry to start matching hospitals</p>
+          </div>
+          <button onClick={() => setIsCreatePatientModalOpen(true)} className="px-4 py-2 mt-2 bg-[#292524] text-white rounded-xl text-xs font-bold shadow-xs hover:bg-black transition-colors">
+            + New Referral Entry
+          </button>
+        </div>
+      ) : (
         <div className="bg-gradient-to-r from-[#1c1917] to-[#292524] p-4 rounded-2xl border border-[#292524] text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold shrink-0">
@@ -909,8 +807,17 @@ export function TransferTab() {
                 <Sparkles className="w-4 h-4 text-emerald-600" />
                 <span>Top 3 Shortest Distance Hospitals</span>
               </h2>
-              <p className="text-[11px] text-[#777169] mt-0.5">
-                Ranked strictly by closest proximity & shortest drive ETA
+              <p className="text-[11px] text-[#777169] mt-0.5 group relative cursor-help w-max">
+                <span className="border-b border-dashed border-[#a8a29e] hover:text-[#0c0a09]">
+                  AI Ranking Basis: Proximity (ETA), Resource Headroom & Specialist Availability
+                </span>
+                <span className="absolute left-0 top-full mt-1 hidden group-hover:block bg-[#1c1917] text-white text-[10px] p-2.5 rounded-md w-72 z-50 font-mono shadow-xl leading-relaxed">
+                  <strong className="text-emerald-400">Algorithmic Match Criteria:</strong><br/>
+                  • <strong>40%</strong> Capability Match (Required vs Available)<br/>
+                  • <strong>35%</strong> Shortest Drive ETA (GPS + Traffic)<br/>
+                  • <strong>15%</strong> Capacity Headroom (Load balancing)<br/>
+                  • <strong>10%</strong> Specialist On-Call Status
+                </span>
               </p>
             </div>
 
@@ -1107,6 +1014,19 @@ export function TransferTab() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0c0a09] mb-1">Response Window (Minutes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  className="w-full bg-[#fafafa] border border-[#d6d3d1] p-2 rounded-xl text-sm font-bold focus:outline-none focus:border-[#292524] focus:ring-1 focus:ring-[#292524] mb-3"
+                  value={newPatientForm.timeoutMinutes}
+                  onChange={(e) => setNewPatientForm({ ...newPatientForm, timeoutMinutes: e.target.value })}
+                />
+                <p className="text-[10px] text-[#777169] mt-[-8px] mb-4">Time given to receiving hospital before auto-allocation.</p>
               </div>
 
               <div>

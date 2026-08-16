@@ -17,6 +17,7 @@
 | API Contract | `MISSING` - No central documentation of actual endpoints. | `COMPLETE` - Generated `API_CONTRACT.md` reflecting live routes. |
 | Clinical Packet RBAC | `BYPASSED` - Packets decryptable by any valid JWT. | `SECURE` - `GET /api/referrals/:id/packet` verifies user's `hospitalId`. |
 | Sentry Monitoring | `MISSING` | `INTEGRATED` - Added to `index.js` and `main.jsx`. |
+| Live Tracking UI | `BASIC 3D Map` - No real road simulation. | `PREMIUM UBER MAP` - Real OSRM road routes, ETA coordination, dynamic progress. |
 | Demo Reset Script | `MISSING` | `COMPLETE` - Added `npm run demo:reset` hitting `/api/demo/reset`. |
 
 ---

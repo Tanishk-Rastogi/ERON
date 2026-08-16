@@ -132,40 +132,28 @@ export function AuthPage({ onLoginSuccess }) {
       if (res.ok) {
         const data = await res.json();
         const authData = {
-          hospitalId: data.hospitalId || `hosp-custom-${Date.now()}`,
+          hospitalId: data.hospitalId,
           hospitalName: data.hospitalName || finalHospitalName,
           address: data.address || finalAddress,
           lat: data.lat || coords.lat,
           lng: data.lng || coords.lng,
           roleDesk: data.role || 'Emergency Referral Officer',
-          token: data.token || `jwt-auth-token-${Date.now()}`,
+          token: data.token,
           loginTime: new Date().toISOString()
         };
 
         localStorage.setItem('eron_auth_session', JSON.stringify(authData));
+        window.location.reload();
+      } else {
+        const errData = await res.json();
+        setError(errData.error || 'Failed to connect to database. Genuine login required.');
         setLoading(false);
-        onLoginSuccess(authData);
-        return;
       }
     } catch (err) {
-      console.warn('Backend login endpoint notice, initializing session:', err);
+      console.error('Backend login error:', err);
+      setError('Cannot reach server. Ensure backend is running.');
+      setLoading(false);
     }
-
-    // Direct registration fallback
-    const authData = {
-      hospitalId: `hosp-custom-${Date.now()}`,
-      hospitalName: finalHospitalName,
-      address: finalAddress,
-      lat: coords.lat,
-      lng: coords.lng,
-      roleDesk: 'Emergency Referral Officer',
-      token: `jwt-auth-token-${Date.now()}`,
-      loginTime: new Date().toISOString()
-    };
-
-    localStorage.setItem('eron_auth_session', JSON.stringify(authData));
-    setLoading(false);
-    onLoginSuccess(authData);
   };
 
   return (

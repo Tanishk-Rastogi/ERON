@@ -20,7 +20,7 @@
   - **Stateful Acceptance**: Clicking **Accept Patient** converts the card status to `ACCEPTED` and transforms the action button into **`Track Transfer →`**.
 - **Dedicated Accepted Transfer Tracking Screen**:
   - Clicking **`Track Transfer →`** opens a full-screen side-by-side tracking interface:
-    - **Left Column**: Interactive Leaflet OpenStreetMap live-tracking map showing the ambulance position moving along the route from the transferring hospital to the receiving hospital. Includes emergency radio frequency broadcast modal.
+    - **Left Column**: Interactive Swiggy/Uber-style live-tracking map showing the ambulance position smoothly moving along real road networks from the transferring hospital to the receiving hospital. Powered by Leaflet and OSRM routing.
     - **Right Column**:
       - **Estimated Time of Arrival (ETA)** box (e.g. `14:48 PM`, `Arriving in 7 mins`, `CORRIDOR ACTIVE`).
       - **Required & Reserved Equipment Checklist** (e.g., ICU Bed, Ventilator, Emergency CT, Neurosurgeon) marked as `✓ RESERVED & READY`.
@@ -98,6 +98,11 @@ ih/
 │   ├── index.css               # Global styles, Leaflet z-index overrides, custom scrollbars
 │   │
 │   ├── components/
+│   │   ├── uber-map/           # Live Swiggy/Uber-style animated tracking map components
+│   │   │   ├── LiveAmbulanceMap.tsx
+│   │   │   ├── mockLocationFeed.ts
+│   │   │   ├── useAmbulanceAnimation.ts
+│   │   │   └── styles.css
 │   │   ├── Header.jsx          # Top navbar, receiving tab badge dot, tab switches & logout
 │   │   ├── ReceivingTab.jsx    # Primary Receiving view, referral cards, live tracking & direct PDF export
 │   │   ├── TransferTab.jsx     # Patient entry creation, search bar, map & Top 3 Shortest Distance cards

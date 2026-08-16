@@ -40,10 +40,13 @@ export function WebSocketProvider({ children }) {
 
     const connectWs = () => {
       let ws;
+      const authData = JSON.parse(localStorage.getItem('eron_auth_session') || '{}');
+      const token = authData.token || '';
+      const qs = token ? `?token=${token}` : '';
       try {
-        ws = new WebSocket(wsUrl);
+        ws = new WebSocket(wsUrl + qs);
       } catch (e) {
-        ws = new WebSocket(`${protocol}//${window.location.hostname}:3001`);
+        ws = new WebSocket(`${protocol}//${window.location.hostname}:3001/ws` + qs);
       }
       wsRef.current = ws;
 
@@ -61,17 +64,17 @@ export function WebSocketProvider({ children }) {
             if (msg.referrals) setReferrals(msg.referrals);
           } else if (msg.type === 'CAPACITY_UPDATED') {
             setHospitals(prev => prev.map(h => {
-              if (h.id === msg.hospitalId) {
+              if (String(h.id) === String(msg.hospitalId)) {
                 const updatedRes = h.resources.map(r => 
-                  r.resourceType === msg.resourceType 
-                    ? { ...r, availableCount: msg.availableCount, updatedAt: msg.updatedAt }
+                  (String(r.resourceType) === String(msg.resourceType) || String(r.type) === String(msg.resourceType) || String(r.bed_type) === String(msg.resourceType))
+                    ? { ...r, availableCount: msg.availableCount, available: msg.availableCount, updatedAt: msg.updatedAt, last_updated_at: msg.updatedAt }
                     : r
                 );
                 return { ...h, resources: updatedRes, lastCapacityUpdateAt: msg.updatedAt };
               }
               return h;
             }));
-          } else if (['REFERRAL_CREATED', 'REFERRAL_ACCEPTED', 'AMBULANCE_DISPATCHED', 'REFERRAL_COMPLETED'].includes(msg.type)) {
+          } else if (['REFERRAL_CREATED', 'REFERRAL_ACCEPTED', 'AMBULANCE_DISPATCHED', 'REFERRAL_COMPLETED', 'REFERRAL_REJECTED'].includes(msg.type)) {
             setReferrals(prev => {
               const exists = prev.some(r => r.id === msg.referral.id);
               return exists 

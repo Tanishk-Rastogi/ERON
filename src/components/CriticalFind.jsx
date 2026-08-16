@@ -20,6 +20,29 @@ export function CriticalFind({ onReferralCreated }) {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [patientSummary, setPatientSummary] = useState('Acute Traumatic Brain Injury — Requires ICU + Neurosurgeon + Ventilator + CT');
   const [creating, setCreating] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+
+  const handleExtract = async () => {
+    if (!patientSummary.trim()) return;
+    setExtracting(true);
+    try {
+      const res = await apiClient('/api/referrals/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: patientSummary })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.requiredCapabilities) setSelectedCapabilities(data.requiredCapabilities);
+        if (data.requiredResources) setSelectedResources(data.requiredResources);
+        if (data.priority) setPriority(data.priority);
+      }
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setExtracting(false);
+    }
+  };
 
   const capabilityOptions = [
     { id: 'NEUROSURGERY', label: 'Neurosurgery' },
@@ -201,7 +224,16 @@ export function CriticalFind({ onReferralCreated }) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="patient-summary" className="text-xs font-semibold text-[#4e4e4e]">Clinical Case Summary:</label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="patient-summary" className="text-xs font-semibold text-[#4e4e4e]">Clinical Case Summary:</label>
+              <button 
+                onClick={handleExtract}
+                disabled={extracting}
+                className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded-md border border-indigo-200 hover:bg-indigo-100 transition-colors"
+              >
+                {extracting ? 'Extracting...' : '✨ Auto-Extract (AI)'}
+              </button>
+            </div>
             <textarea
               id="patient-summary"
               name="patientSummary"

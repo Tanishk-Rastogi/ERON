@@ -32,117 +32,7 @@ import {
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-
-const DEMO_INCOMING_REFERRALS = [
-  {
-    id: 'demo-ref-1',
-    patientRefCode: '8941',
-    status: 'PENDING',
-    requirementSummary: 'Acute Traumatic Brain Injury — Subdural Hematoma with Midline Shift',
-    originHospitalName: 'District Hospital Central',
-    targetHospitalName: 'City Super Specialty Hospital',
-    requiredThings: ['ICU Bed', 'Neurosurgeon', 'Ventilator', 'Emergency CT'],
-    eta: '7-10 mins',
-    estimatedArrivalTime: '14:48 PM',
-    distanceKm: '5.2 km',
-    progressPct: 50,
-    ambulance: { id: 'AMB-101', driver: 'Rajesh Verma (ALS Desk)', speed: '64 km/h' },
-    patientData: {
-      patientName: 'Karan Sharma',
-      patientAge: 42,
-      patientSex: 'MALE',
-      clinicalSummary: 'Acute Traumatic Brain Injury — Subdural Hematoma with Midline Shift. Requires urgent ICU bed & neurosurgical evaluation.',
-      diagnosisSuspected: 'Acute Subdural Hematoma with Midline Shift',
-      treatmentGiven: 'IV Mannitol, Intubated on manual bag',
-      medications: ['Inj. Mannitol 100ml', 'Inj. Ceftriaxone 1g'],
-      allergies: ['Penicillin'],
-      vitals: { bp: '140/90', hr: 110, spo2: 94, rr: 24, temp: '98.6 F', gcs: 8 },
-      reasonForReferral: 'No neurosurgeon available at District Hospital Central',
-      referringDoctorName: 'Dr. Ramesh Kumar (CMO)'
-    }
-  },
-  {
-    id: 'demo-ref-2',
-    patientRefCode: '5521',
-    status: 'PENDING',
-    requirementSummary: 'Acute Anterior Wall STEMI — Severe Cardiogenic Shock',
-    originHospitalName: 'Valley Community Desk',
-    targetHospitalName: 'City Super Specialty Hospital',
-    requiredThings: ['Cath Lab OT', 'Intra-aortic Balloon Pump', 'Cardiologist'],
-    eta: '14-18 mins',
-    estimatedArrivalTime: '14:58 PM',
-    distanceKm: '12.4 km',
-    progressPct: 25,
-    ambulance: { id: 'AMB-204', driver: 'Suresh Patil (Cardiac Care)', speed: '58 km/h' },
-    patientData: {
-      patientName: 'Priya Sundaram',
-      patientAge: 58,
-      patientSex: 'FEMALE',
-      clinicalSummary: 'Anterior Wall STEMI with cardiogenic shock. ST elevation in V1-V4.',
-      diagnosisSuspected: 'Acute Anterior Myocardial Infarction',
-      treatmentGiven: 'Dual Antiplatelets, Inj. Heparin 5000 IU, Oxygen at 6L/min',
-      medications: ['Tab. Aspirin 300mg', 'Tab. Clopidogrel 300mg', 'Inj. Heparin'],
-      allergies: ['None known'],
-      vitals: { bp: '90/60', hr: 125, spo2: 92, rr: 26, temp: '98.2 F', gcs: 14 },
-      reasonForReferral: 'Cath Lab unavailable at Valley Community Desk',
-      referringDoctorName: 'Dr. Ananya Reddy'
-    }
-  },
-  {
-    id: 'demo-ref-3',
-    patientRefCode: '3019',
-    status: 'PENDING',
-    requirementSummary: 'Severe Poly-Trauma — Fractured Femur & Blunt Abdominal Trauma',
-    originHospitalName: 'Peripheral Emergency Bay',
-    targetHospitalName: 'City Super Specialty Hospital',
-    requiredThings: ['Trauma OT', 'Massive Transfusion Kit', 'Orthopedic Surgeon'],
-    eta: '4-6 mins',
-    estimatedArrivalTime: '14:44 PM',
-    distanceKm: '3.1 km',
-    progressPct: 80,
-    ambulance: { id: 'AMB-309', driver: 'Vikram Singh (Trauma Unit)', speed: '72 km/h' },
-    patientData: {
-      patientName: 'Anil Deshmukh',
-      patientAge: 35,
-      patientSex: 'MALE',
-      clinicalSummary: 'High-speed motor vehicle collision. Bilateral femur fractures and blunt abdominal trauma.',
-      diagnosisSuspected: 'Blunt Abdominal Trauma with Hemoperitoneum & Fractured Femur',
-      treatmentGiven: 'Bilateral Thomas splints, 2L Normal Saline IV wide open',
-      medications: ['Inj. Tranexamic Acid 1g', 'Inj. Fentanyl 50mcg'],
-      allergies: ['Sulfa drugs'],
-      vitals: { bp: '95/55', hr: 132, spo2: 95, rr: 28, temp: '97.9 F', gcs: 12 },
-      reasonForReferral: 'Massive blood transfusion protocol required',
-      referringDoctorName: 'Dr. Sunita Rao'
-    }
-  },
-  {
-    id: 'demo-ref-4',
-    patientRefCode: '7412',
-    status: 'PENDING',
-    requirementSummary: 'Acute Ischemic Stroke (LVO) — Requires Mechanical Thrombectomy & Neuro ICU',
-    originHospitalName: 'Metropolitan Emergency Desk',
-    targetHospitalName: 'City Super Specialty Hospital',
-    requiredThings: ['Neuro ICU Bed', 'Biplane Cath Lab', 'Neuroradiologist', 'tPA Infusion'],
-    eta: '8-12 mins',
-    estimatedArrivalTime: '14:52 PM',
-    distanceKm: '7.8 km',
-    progressPct: 35,
-    ambulance: { id: 'AMB-405', driver: 'Manoj Kumar (Stroke ALS)', speed: '68 km/h' },
-    patientData: {
-      patientName: 'Aditya Gupta',
-      patientAge: 64,
-      patientSex: 'MALE',
-      clinicalSummary: 'Sudden onset right-sided hemiplegia and expressive aphasia. NIHSS score 18. CT Angio shows left MCA occlusion.',
-      diagnosisSuspected: 'Acute Ischemic Stroke — Left MCA Occlusion',
-      treatmentGiven: 'IV tPA (Alteplase) bolus initiated, Head elevated 30 deg',
-      medications: ['Inj. Alteplase 9mg bolus', 'Inj. Labetalol 10mg'],
-      allergies: ['Contrast Dye'],
-      vitals: { bp: '165/95', hr: 88, spo2: 97, rr: 18, temp: '98.4 F', gcs: 11 },
-      reasonForReferral: 'Biplane Cath Lab and Interventional Neuroradiologist required for thrombectomy',
-      referringDoctorName: 'Dr. Vikramaditya Sen'
-    }
-  }
-];
+import LiveAmbulanceMap from './uber-map/LiveAmbulanceMap';
 
 const createAmbulanceIcon = (label) => {
   return L.divIcon({
@@ -197,180 +87,99 @@ const createHospitalIcon = (label, color) => {
   });
 };
 
-// Live Tracking Map Component for Accepted Transfers
-function LiveAmbulanceTrackingMap({ referral, onOpenRadioModal }) {
-  const [progress, setProgress] = useState(referral?.progressPct || 50);
+// Live Tracking Map Component for Accepted Transfers moved to LiveAmbulanceTrackingMap3D.jsx
 
-  const originPos = [12.9716, 77.5946]; // Origin Hospital
-  const targetPos = [12.9352, 77.6245]; // Receiving Hospital
-  
-  const ambLat = originPos[0] + (targetPos[0] - originPos[0]) * (progress / 100);
-  const ambLng = originPos[1] + (targetPos[1] - originPos[1]) * (progress / 100);
-  const ambPos = [ambLat, ambLng];
-  const polylineCoords = [originPos, ambPos, targetPos];
-
-  const originName = referral?.originHospitalName || 'District Hospital Central';
-  const targetName = referral?.targetHospitalName || 'City Super Specialty Hospital';
-  const ambId = referral?.ambulance?.id || 'AMB-101';
-  const driverName = referral?.ambulance?.driver || 'Rajesh Verma (ALS Desk)';
-  const speed = referral?.ambulance?.speed || '64 km/h';
-
-  const remainingMins = Math.max(1, Math.round(12 * (1 - progress / 100)));
-
-  return (
-    <div className="eleven-card bg-white border border-[#e7e5e4] rounded-2xl overflow-hidden shadow-md h-full flex flex-col">
-      {/* Map Bar Header */}
-      <div className="p-3.5 bg-[#fafafa] border-b border-[#e7e5e4] flex flex-wrap items-center justify-between font-mono text-xs gap-2">
-        <div className="flex items-center gap-2">
-          <Navigation className="w-4 h-4 text-blue-600 animate-pulse" />
-          <span className="font-bold text-[#0c0a09]">Live Ambulance GPS Corridor</span>
-          <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
-            PROGRESS: {progress}%
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <span className="text-[11px] text-[#777169]">
-            ETA: <strong className="text-emerald-700 font-bold">{remainingMins} Mins</strong>
-          </span>
-
-          <button
-            onClick={onOpenRadioModal}
-            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-black rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-2xs transition-all"
-            title="Open Live Driver Walkie-Talkie Radio"
-          >
-            <Radio className="w-3.5 h-3.5 animate-pulse" />
-            <span>Driver Radio</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Interactive Simulation Controls */}
-      <div className="bg-[#1c1917] px-3.5 py-2 flex items-center justify-between gap-2 border-b border-[#292524] text-[11px] font-mono">
-        <span className="text-[#a8a29e] flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Sim Controls:
-        </span>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setProgress(15)}
-            className="px-2 py-0.5 rounded bg-[#292524] hover:bg-[#383330] text-white flex items-center gap-1"
-          >
-            <RotateCcw className="w-3 h-3" /> Reset (15%)
-          </button>
-          <button
-            onClick={() => setProgress(prev => Math.min(90, prev + 25))}
-            className="px-2 py-0.5 rounded bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 font-bold"
-          >
-            <FastForward className="w-3 h-3" /> Advance +25%
-          </button>
-          <button
-            onClick={() => setProgress(100)}
-            className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 font-bold"
-          >
-            ✓ Arrived (100%)
-          </button>
-        </div>
-      </div>
-
-      {/* Leaflet Map Container */}
-      <div className="h-[460px] w-full relative flex-1">
-        {/* Floating ETA Badge Overlay */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-[#1c1917]/95 border border-[#292524] text-white px-5 py-2.5 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-3 font-mono text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-            <strong className="text-white font-sans text-sm">Arriving in {remainingMins} mins</strong>
-          </div>
-          <span className="text-[#383330]">|</span>
-          <span className="text-emerald-400 font-bold font-mono">{speed}</span>
-          <span className="text-[#383330]">|</span>
-          <span className="text-amber-400 font-bold">{progress}% Route Completed</span>
-        </div>
-
-        <MapContainer
-          center={[12.9550, 77.6100]}
-          zoom={12}
-          scrollWheelZoom={false}
-          style={{ height: '100%', width: '100%' }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-          />
-
-          <Polyline
-            positions={polylineCoords}
-            pathOptions={{ color: '#10b981', weight: 6, opacity: 0.95, dashArray: '6, 12' }}
-          />
-
-          <Marker position={originPos} icon={createHospitalIcon(originName.split(' ')[0], '#10b981')}>
-            <Popup><div className="text-xs font-sans font-bold">Origin: {originName}</div></Popup>
-          </Marker>
-
-          <Marker position={ambPos} icon={createAmbulanceIcon(ambId)}>
-            <Popup>
-              <div className="p-1 space-y-1 font-sans text-xs">
-                <strong className="text-amber-600 block">🚑 {ambId} (ALS Support)</strong>
-                <p>Driver: {driverName}</p>
-                <p className="text-emerald-700 font-mono font-bold">Green Corridor Active ({speed})</p>
-              </div>
-            </Popup>
-          </Marker>
-
-          <Marker position={targetPos} icon={createHospitalIcon(targetName.split(' ')[0], '#2563eb')}>
-            <Popup><div className="text-xs font-sans font-bold">Receiving Target: {targetName}</div></Popup>
-          </Marker>
-        </MapContainer>
-      </div>
-
-      {/* Telemetry Footer */}
-      <div className="bg-[#1c1917] p-3 text-xs font-mono grid grid-cols-2 sm:grid-cols-4 gap-3 border-t border-[#292524]">
-        <div>
-          <span className="text-[#a8a29e] text-[10px] block">Unit Dispatched:</span>
-          <p className="font-bold text-white truncate">{ambId}</p>
-        </div>
-        <div>
-          <span className="text-[#a8a29e] text-[10px] block">ALS Driver On-Duty:</span>
-          <p className="font-bold text-emerald-400 truncate">{driverName}</p>
-        </div>
-        <div>
-          <span className="text-[#a8a29e] text-[10px] block">Current Speed:</span>
-          <p className="font-bold text-amber-400 truncate">{speed}</p>
-        </div>
-        <div>
-          <span className="text-[#a8a29e] text-[10px] block">Green Corridor:</span>
-          <p className="font-bold text-blue-400 truncate">Signal Priority Active</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function ReceivingTab({ preSelectedReferral }) {
-  const { referrals, setLastNotification } = useWebSocket();
+export function ReceivingTab({ preSelectedReferral, authSession }) {
+  const { referrals, hospitals, setLastNotification } = useWebSocket();
+  const [liveMetrics, setLiveMetrics] = useState(null);
   
   // View mode state: 'list' (Patient Cards Grid) vs 'tracking' (Live Tracking Page)
   const [viewMode, setViewMode] = useState('list');
   const [trackingReferral, setTrackingReferral] = useState(null);
-  
   // Modal states
   const [detailModalRef, setDetailModalRef] = useState(null);
   const [isRadioModalOpen, setIsRadioModalOpen] = useState(false);
   const [acceptedIds, setAcceptedIds] = useState(new Set());
+  const [prevStatusMap, setPrevStatusMap] = useState({});
 
-  // Merge real WebSocket incoming referrals with rich demo data (ensuring demo cards never vanish)
+  useEffect(() => {
+    if (!referrals) return;
+    
+    let shouldAutoTrack = false;
+    let trackRef = null;
+
+    const newStatusMap = {};
+    for (const r of referrals) {
+      if (String(r.targetHospitalId) === String(authSession?.hospitalId)) {
+        newStatusMap[r.id] = r.status;
+        
+        // If it newly transitioned to ACCEPTED or IN_TRANSIT
+        if ((r.status === 'ACCEPTED' || r.status === 'IN_TRANSIT') && prevStatusMap[r.id] !== r.status) {
+          shouldAutoTrack = true;
+          trackRef = r;
+        }
+      }
+    }
+    
+    setPrevStatusMap(newStatusMap);
+
+    if (shouldAutoTrack && trackRef && viewMode !== 'tracking') {
+      setTrackingReferral(trackRef);
+      setLiveMetrics(null); // Reset metrics on new tracking
+      setViewMode('tracking');
+    }
+  }, [referrals, authSession?.hospitalId, viewMode]);
+
+  // Timer state for countdowns
+  const [timeRemaining, setTimeRemaining] = useState({});
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => {
+        const next = { ...prev };
+        let changed = false;
+        referrals.forEach(ref => {
+          if (ref.status === 'REQUEST_SENT' && ref.createdAt) {
+            const created = new Date(ref.createdAt).getTime();
+            const now = Date.now();
+            const elapsed = Math.floor((now - created) / 1000);
+            const maxSeconds = ref.timeoutSeconds || 300;
+            const remaining = Math.max(0, maxSeconds - elapsed);
+            if (next[ref.id] !== remaining) {
+              next[ref.id] = remaining;
+              changed = true;
+            }
+          }
+        });
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [referrals]);  const [auditData, setAuditData] = useState(null);
+  const [verifyingAudit, setVerifyingAudit] = useState(false);
+
+  const handleVerifyAudit = async (id) => {
+    setVerifyingAudit(true);
+    setAuditData(null);
+    try {
+      const res = await apiClient(`/api/referrals/${id}/verify-audit`);
+      if (res.ok) {
+        const data = await res.json();
+        setAuditData(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setVerifyingAudit(false);
+    }
+  };
+
   const realIncoming = referrals.filter(r => 
-    (r.targetHospitalId === 'hosp-b' || r.targetHospitalId === 'hosp-c' || r.acceptedHospitalId === 'hosp-b' || r.acceptedHospitalId === 'hosp-c') &&
+    (String(r.targetHospitalId) === String(authSession?.hospitalId) || String(r.acceptedHospitalId) === String(authSession?.hospitalId)) &&
     r.status !== 'COMPLETED'
   );
 
-  const incomingList = [...DEMO_INCOMING_REFERRALS];
-  realIncoming.forEach(r => {
-    if (!incomingList.some(d => d.id === r.id || d.patientRefCode === r.patientRefCode)) {
-      incomingList.push(r);
-    }
-  });
+  const incomingList = realIncoming;
 
   // Handle preSelectedReferral if passed from parent
   useEffect(() => {
@@ -383,23 +192,28 @@ export function ReceivingTab({ preSelectedReferral }) {
     }
   }, [preSelectedReferral]);
 
-  // Handler: Accept Patient Request
-  const handleAcceptPatient = async (ref) => {
-    ref.status = 'ACCEPTED';
-    setAcceptedIds(prev => new Set([...prev, ref.id]));
+
+  // Handler: Reject Patient Request
+  const handleRejectPatient = async (ref) => {
+    ref.status = 'REJECTED';
+    setAcceptedIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(ref.id);
+      return newSet;
+    });
 
     try {
-      await apiClient(`/api/referrals/${ref.id}/accept`, {
+      await apiClient(`/api/referrals/${ref.id}/reject`, {
         method: 'POST'
       });
     } catch (err) {
-      console.warn('Accept referral API notice:', err);
+      console.warn('Reject referral API notice:', err);
     }
     
     if (setLastNotification) {
       setLastNotification({
-        type: 'success',
-        text: `✓ Referral #${ref.patientRefCode} (${ref.patientData?.patientName || 'Patient'}) accepted successfully.`
+        type: 'error',
+        text: `✕ Referral #${ref.patientRefCode} rejected.`
       });
     }
   };
@@ -539,8 +353,32 @@ export function ReceivingTab({ preSelectedReferral }) {
 
   // Render Mode B: Dedicated Accepted Transfer Live Tracking Page
   if (viewMode === 'tracking' && trackingReferral) {
-    const patient = trackingReferral.patientData || DEMO_INCOMING_REFERRALS[0].patientData;
-    const requiredThingsList = trackingReferral.requiredThings || ['ICU Bed', 'Ventilator', 'Emergency CT', 'Neurosurgeon'];
+    const patient = trackingReferral.patientData || {};
+    const requiredThingsList = (trackingReferral.requiredCapabilities && trackingReferral.requiredCapabilities.length > 0) ? trackingReferral.requiredCapabilities : ['ICU Bed', 'Ventilator'];
+    
+    const originHosp = hospitals?.find(h => h.id === trackingReferral.originHospitalId);
+    const targetHosp = hospitals?.find(h => h.id === trackingReferral.targetHospitalId);
+    const originName = originHosp?.name || trackingReferral.originHospitalName || 'Origin Hospital';
+    const targetName = targetHosp?.name || trackingReferral.targetHospitalName || 'Destination Hospital';
+
+    let etaString = "--:--";
+    let etaContext = "Calculating...";
+    
+    if (liveMetrics) {
+      if (liveMetrics.progressPct >= 99.5) {
+        etaString = "Arrived";
+        etaContext = "(Journey completed)";
+      } else if (liveMetrics.etaMin > 0) {
+        const etaDate = new Date(Date.now() + liveMetrics.etaMin * 60000);
+        etaString = etaDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        etaContext = `(Arriving in approx ${Math.max(1, Math.round(liveMetrics.etaMin))} mins)`;
+      }
+    } else {
+      // default/fallback
+      const etaDate = new Date(Date.now() + 10 * 60000);
+      etaString = etaDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      etaContext = "(Arriving in approx 10 mins)";
+    }
 
     return (
       <div className="space-y-6 max-w-7xl mx-auto font-sans animate-in fade-in duration-300">
@@ -567,7 +405,7 @@ export function ReceivingTab({ preSelectedReferral }) {
                 </span>
               </div>
               <p className="text-xs text-[#777169]">
-                Transferring from <strong className="text-blue-600">{trackingReferral.originHospitalName}</strong> to <strong className="text-emerald-700">{trackingReferral.targetHospitalName}</strong>
+                Transferring from <strong className="text-blue-600">{originName}</strong> to <strong className="text-emerald-700">{targetName}</strong>
               </p>
             </div>
           </div>
@@ -586,13 +424,40 @@ export function ReceivingTab({ preSelectedReferral }) {
         {/* Side-by-Side Layout: Map on Left (7 cols) + Status & Report on Right (5 cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           
-          {/* LEFT HAND SIDE: Live Map Tracking Ambulance from Origin to Destination */}
-          <div className="lg:col-span-7 space-y-4">
-            <LiveAmbulanceTrackingMap 
-              referral={trackingReferral} 
-              onOpenRadioModal={() => setIsRadioModalOpen(true)}
+        {/* Map Side */}
+        <div className="col-span-12 lg:col-span-7 animate-in fade-in zoom-in-95 duration-500 delay-150 relative h-full">
+          {trackingReferral?.status === 'COMPLETED' ? (
+            <div className="eleven-card bg-white border border-[#e7e5e4] rounded-2xl overflow-hidden shadow-md h-full flex flex-col items-center justify-center p-8 text-center space-y-4">
+              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+              </div>
+              <h2 className="text-2xl font-extrabold text-[#0c0a09]">Transfer Delivered Successfully!</h2>
+              <p className="text-[#777169] text-sm">Patient has successfully reached the destination hospital. The simulation is now complete.</p>
+              <button
+                onClick={() => setViewMode('list')}
+                className="mt-4 px-6 py-3 bg-[#0c0a09] hover:bg-[#292524] text-white rounded-xl font-bold shadow-md transition-all"
+              >
+                Return to Dashboard
+              </button>
+            </div>
+          ) : trackingReferral ? (
+            <LiveAmbulanceMap 
+              source={{ name: originName, lat: originHosp?.location_lat || 12.9716, lng: originHosp?.location_lng || 77.5946 }}
+              destination={{ name: targetName, lat: targetHosp?.location_lat || 12.9352, lng: targetHosp?.location_lng || 77.6245 }}
+              onMetricsUpdate={setLiveMetrics}
+              onComplete={() => {
+                const token = localStorage.getItem('eron_auth_session');
+                fetch(`http://localhost:3001/api/referrals/${trackingReferral.id}/complete`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  }
+                }).catch(console.error);
+              }}
             />
-          </div>
+          ) : null}
+        </div>
 
           {/* RIGHT HAND SIDE: Arrival Time + Things Required + View Report + PDF Download */}
           <div className="lg:col-span-5 space-y-4">
@@ -607,10 +472,10 @@ export function ReceivingTab({ preSelectedReferral }) {
                 <div className="flex items-baseline justify-between pt-1">
                   <div>
                     <span className="text-2xl font-black font-mono text-emerald-400">
-                      {trackingReferral.estimatedArrivalTime || '14:48 PM'}
+                      {etaString}
                     </span>
                     <span className="text-xs text-[#a8a29e] block font-mono">
-                      (Arriving in approx {trackingReferral.eta || '7-10 mins'})
+                      {etaContext}
                     </span>
                   </div>
 
@@ -781,11 +646,37 @@ export function ReceivingTab({ preSelectedReferral }) {
                   <p className="text-red-600 font-bold">Allergies: {patient.allergies?.join(', ')}</p>
                 </div>
 
+                {/* Audit Ledger Section */}
+                {auditData && (
+                  <div className="bg-[#f0fdf4] p-4 rounded-2xl border border-[#bbf7d0] space-y-3 mt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-emerald-800 text-sm">✓ Cryptographic Ledger Verified</span>
+                      <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-1 rounded-full font-mono">{auditData.is_valid ? 'HASH MATCH' : 'INVALID'}</span>
+                    </div>
+                    <div className="space-y-2">
+                      {auditData.verificationChain?.map((step, i) => (
+                        <div key={i} className="flex justify-between items-center text-xs border-b border-emerald-100 pb-1">
+                          <span className="text-emerald-900 font-mono">{step.status_transition}</span>
+                          <span className="text-[9px] text-emerald-600 font-mono truncate max-w-[120px]">{step.event_hash}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Footer Modal Actions */}
                 <div className="flex items-center justify-end gap-2 pt-2">
                   <button
+                    onClick={() => handleVerifyAudit(detailModalRef.id)}
+                    disabled={verifyingAudit}
+                    className="px-4 py-2 bg-[#292524] text-white hover:bg-black font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors disabled:opacity-50"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>{verifyingAudit ? 'Verifying...' : 'Verify Audit Ledger'}</span>
+                  </button>
+                  <button
                     onClick={() => handleDownloadPdfReport(detailModalRef)}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download PDF Report</span>
@@ -844,6 +735,20 @@ export function ReceivingTab({ preSelectedReferral }) {
                   </span>
                 </div>
 
+                {!isAccepted && ref.status === 'REQUEST_SENT' && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-md p-2 flex flex-col items-center justify-center">
+                    <span className="text-[10px] text-amber-700 font-mono font-bold uppercase tracking-wider mb-1">
+                      Time to Respond
+                    </span>
+                    <span className={`text-xl font-mono font-extrabold ${timeRemaining[ref.id] <= 60 ? 'text-red-600 animate-pulse' : 'text-amber-600'}`}>
+                      {timeRemaining[ref.id] !== undefined ? `${Math.floor(timeRemaining[ref.id] / 60)}:${String(timeRemaining[ref.id] % 60).padStart(2, '0')}` : '5:00'}
+                    </span>
+                    <span className="text-[9px] text-amber-600/70 font-sans mt-0.5">
+                      Auto-allocation if ignored
+                    </span>
+                  </div>
+                )}
+
                 {/* 1. Patient Name */}
                 <div>
                   <span className="text-[10px] font-mono text-[#777169] uppercase block font-semibold">
@@ -893,12 +798,14 @@ export function ReceivingTab({ preSelectedReferral }) {
               {/* 5. Action Buttons */}
               <div className="pt-2 border-t border-[#f0efed] grid grid-cols-2 gap-2">
                 {!isAccepted ? (
-                  <button
-                    onClick={() => handleAcceptPatient(ref)}
-                    className="eleven-button py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl justify-center shadow-xs transition-all"
-                  >
-                    ✓ Accept Patient
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleRejectPatient(ref)}
+                      className="eleven-button py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl justify-center shadow-xs transition-all flex-1"
+                    >
+                      ✕ Reject
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={() => handleOpenTrackingPage(ref)}
@@ -978,10 +885,36 @@ export function ReceivingTab({ preSelectedReferral }) {
                 <p className="text-blue-700 font-semibold pt-1">Treatment Given: {detailModalRef.patientData?.treatmentGiven}</p>
               </div>
 
+              {/* Audit Ledger Section */}
+              {auditData && (
+                <div className="bg-[#f0fdf4] p-4 rounded-2xl border border-[#bbf7d0] space-y-3 mt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-emerald-800 text-sm">✓ Cryptographic Ledger Verified</span>
+                    <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-1 rounded-full font-mono">{auditData.is_valid ? 'HASH MATCH' : 'INVALID'}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {auditData.verificationChain?.map((step, i) => (
+                      <div key={i} className="flex justify-between items-center text-xs border-b border-emerald-100 pb-1">
+                        <span className="text-emerald-900 font-mono">{step.status_transition}</span>
+                        <span className="text-[9px] text-emerald-600 font-mono truncate max-w-[120px]">{step.event_hash}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
+                  onClick={() => handleVerifyAudit(detailModalRef.id)}
+                  disabled={verifyingAudit}
+                  className="px-4 py-2 bg-[#292524] text-white hover:bg-black font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors disabled:opacity-50"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>{verifyingAudit ? 'Verifying...' : 'Verify Audit Ledger'}</span>
+                </button>
+                <button
                   onClick={() => handleDownloadPdfReport(detailModalRef)}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   <span>Download PDF Report</span>

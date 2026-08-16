@@ -4,17 +4,25 @@ const cors = require('cors');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const Sentry = require('@sentry/node');
+const url = require('url');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
 
-// Simple broadcast helper mimicking io.emit
+// Scoped broadcast helper mimicking io.emit
 const ioMock = {
   emit: (type, payload) => {
     const msg = JSON.stringify({ type, ...payload });
     wss.clients.forEach(client => {
       if (client.readyState === 1 /* WebSocket.OPEN */) {
+        if (payload.referral && client.hospitalId) {
+          const ref = payload.referral;
+          if (ref.originHospitalId !== client.hospitalId && ref.targetHospitalId !== client.hospitalId && ref.acceptedHospitalId !== client.hospitalId) {
+             return;
+          }
+        }
         client.send(msg);
       }
     });
@@ -52,6 +60,7 @@ const ambulanceRoutes = require('./routes/ambulances');
 const demoRoutes = require('./routes/demo');
 const smsRoutes = require('./routes/sms');
 const analyticsRoutes = require('./routes/analytics');
+const messagesRoutes = require('./routes/messages');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/hospitals', hospitalRoutes);
@@ -60,6 +69,7 @@ app.use('/api/ambulances', ambulanceRoutes);
 app.use('/demo', demoRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/messages', messagesRoutes);
 
 // Basic Health Check
 app.get('/health', (req, res) => {
@@ -77,11 +87,19 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error', message: err.message });
 });
 
-// Socket.io connection handling
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+// WebSocket connection handling
+wss.on('connection', (ws, req) => {
+  const parameters = url.parse(req.url, true);
+  const token = parameters.query.token;
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkeyforlocaldev123');
+      ws.hospitalId = decoded.hospital_id || decoded.hospitalId;
+    } catch(e) {}
+  }
+  console.log('Client connected via WebSocket, hospitalId:', ws.hospitalId);
+  ws.on('close', () => {
+    console.log('Client disconnected, hospitalId:', ws.hospitalId);
   });
 });
 

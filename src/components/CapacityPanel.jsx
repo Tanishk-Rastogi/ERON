@@ -9,11 +9,35 @@ import {
   Building2 
 } from 'lucide-react';
 
-export function CapacityPanel() {
+export function CapacityPanel({ authSession }) {
   const { hospitals } = useWebSocket();
-  const [selectedHospitalId, setSelectedHospitalId] = useState('hosp-b');
+  const [selectedHospitalId, setSelectedHospitalId] = useState('');
 
-  const selectedHospital = hospitals.find(h => h.id === selectedHospitalId) || hospitals[0];
+  const [specialists, setSpecialists] = useState([
+    { id: 'spec-1', role: 'Neurosurgeon', status: 'AVAILABLE' },
+    { id: 'spec-2', role: 'Cardiologist', status: 'ON_CALL' },
+    { id: 'spec-3', role: 'Trauma Surgeon', status: 'UNAVAILABLE' }
+  ]);
+
+  // Set default selection based on authSession
+  React.useEffect(() => {
+    if (hospitals && hospitals.length > 0 && !selectedHospitalId) {
+      const defaultId = authSession?.hospitalId || hospitals[0].id;
+      setSelectedHospitalId(String(defaultId));
+    }
+  }, [hospitals, authSession, selectedHospitalId]);
+
+  const handleSpecialistToggle = (id) => {
+    setSpecialists(prev => prev.map(s => {
+      if (s.id !== id) return s;
+      const nextStatus = s.status === 'AVAILABLE' ? 'ON_CALL' : s.status === 'ON_CALL' ? 'UNAVAILABLE' : 'AVAILABLE';
+      return { ...s, status: nextStatus };
+    }));
+  };
+
+  const selectedHospital = hospitals?.length > 0 
+    ? (hospitals.find(h => String(h.id) === String(selectedHospitalId)) || hospitals[0]) 
+    : null;
 
   const handleAdjustCapacity = async (resourceType, delta) => {
     if (!selectedHospital) return;
@@ -25,9 +49,10 @@ export function CapacityPanel() {
         body: JSON.stringify({
           resourceType,
           delta,
-          staffId: 'user-admin-b'
+          staffId: authSession?.id || 'user-admin-b'
         })
       });
+      // Do not update local state here; let the WebSocket update it.
     } catch (err) {
       console.error('Capacity update error:', err);
     }
@@ -100,14 +125,16 @@ export function CapacityPanel() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(selectedHospital.resources || []).map((res) => {
-              const available = res.availableCount;
-              const total = res.totalCapacity;
-              const isStale = (Date.now() - new Date(res.updatedAt || Date.now()).getTime()) > 20 * 60000;
+            {(selectedHospital.resources || []).map((res, idx) => {
+              const rType = res.resourceType || res.type || res.bed_type || 'UNKNOWN';
+              const available = res.availableCount !== undefined ? res.availableCount : (res.available || 0);
+              const total = res.totalCapacity !== undefined ? res.totalCapacity : (res.total || 0);
+              const lastUpdated = res.updatedAt || res.last_updated_at || Date.now();
+              const isStale = (Date.now() - new Date(lastUpdated).getTime()) > 20 * 60000;
 
               return (
                 <div
-                  key={res.id || res.resourceType}
+                  key={res.id || rType || idx}
                   className={`eleven-card p-6 space-y-4 bg-white ${
                     available === 0 ? 'bg-[#e8b8c4]/20 border-[#e8b8c4]' : 'hover:border-[#292524]'
                   }`}
@@ -115,7 +142,7 @@ export function CapacityPanel() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-bold text-[#0c0a09] tracking-widest uppercase font-mono">
-                        {res.resourceType.replace('_', ' ')}
+                        {String(rType).replace(/_/g, ' ')}
                       </h3>
                       <p className="text-xs text-[#777169] font-mono tabular-nums">Total Pool Capacity: {total}</p>
                     </div>
@@ -139,9 +166,9 @@ export function CapacityPanel() {
 
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleAdjustCapacity(res.resourceType, -1)}
+                        onClick={() => handleAdjustCapacity(rType, -1)}
                         disabled={available === 0}
-                        aria-label={`Decrement ${res.resourceType} capacity count`}
+                        aria-label={`Decrement ${rType} capacity count`}
                         className="w-10 h-10 rounded-full bg-[#f5f5f5] hover:bg-[#e7e5e4] disabled:opacity-30 border border-[#e7e5e4] text-[#dc2626] font-bold flex items-center justify-center text-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
                         title="Decrement capacity (-1)"
                       >
@@ -149,8 +176,8 @@ export function CapacityPanel() {
                       </button>
 
                       <button
-                        onClick={() => handleAdjustCapacity(res.resourceType, 1)}
-                        aria-label={`Increment ${res.resourceType} capacity count`}
+                        onClick={() => handleAdjustCapacity(rType, 1)}
+                        aria-label={`Increment ${rType} capacity count`}
                         className="w-10 h-10 rounded-full bg-[#f5f5f5] hover:bg-[#e7e5e4] border border-[#e7e5e4] text-[#16a34a] font-bold flex items-center justify-center text-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#292524]"
                         title="Increment capacity (+1)"
                       >
@@ -158,8 +185,8 @@ export function CapacityPanel() {
                       </button>
 
                       <button
-                        onClick={() => handleSetZero(res.resourceType)}
-                        aria-label={`Emergency set ${res.resourceType} capacity to zero`}
+                        onClick={() => handleSetZero(rType)}
+                        aria-label={`Emergency set ${rType} capacity to zero`}
                         className="eleven-button eleven-button-danger text-[10px] py-1.5 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626]"
                         title="Emergency set to 0 (Triggers auto-reroute!)"
                       >
@@ -170,6 +197,30 @@ export function CapacityPanel() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Specialist Availability Toggle */}
+          <div className="pt-6">
+            <h2 className="font-bold text-[#777169] uppercase tracking-widest text-xs mb-4">
+              SPECIALIST AVAILABILITY
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {specialists.map(spec => (
+                <div key={spec.id} className="eleven-card p-4 bg-white border border-[#e7e5e4] hover:border-[#292524] flex items-center justify-between">
+                  <span className="font-bold text-sm text-[#0c0a09] font-mono">{spec.role}</span>
+                  <button
+                    onClick={() => handleSpecialistToggle(spec.id)}
+                    className={`text-[10px] font-bold px-3 py-1.5 rounded-md border transition-colors ${
+                      spec.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' :
+                      spec.status === 'ON_CALL' ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' :
+                      'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                    }`}
+                  >
+                    {spec.status.replace('_', ' ')}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : null}
