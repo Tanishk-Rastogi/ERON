@@ -61,6 +61,7 @@ async function initDb() {
     CREATE TABLE referrals (
       id SERIAL PRIMARY KEY,
       patient_ref_id VARCHAR(255) NOT NULL,
+      patient_key VARCHAR(64),
       sending_hospital_id INTEGER REFERENCES hospitals(id) NOT NULL,
       receiving_hospital_id INTEGER REFERENCES hospitals(id),
       required_capabilities TEXT[] NOT NULL DEFAULT '{}',
@@ -68,7 +69,8 @@ async function initDb() {
       timeout_seconds INTEGER NOT NULL DEFAULT 300,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       closed_at TIMESTAMP,
-      patient_data JSONB
+      patient_data JSONB,
+      rejection_reason TEXT
     );
 
     CREATE TABLE referral_status_log (
@@ -139,6 +141,7 @@ async function initDb() {
       encrypted_data TEXT NOT NULL,
       iv VARCHAR(32) NOT NULL,
       auth_tag VARCHAR(32),
+      salt VARCHAR(32),
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
   `);

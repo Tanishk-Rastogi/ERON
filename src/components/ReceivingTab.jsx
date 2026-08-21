@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useWebSocket } from '../context/WebSocketContext';
 import { apiClient } from '../utils/apiClient.js';
+import { RejectReasonModal } from './RejectReasonModal.jsx';
 import { 
   Building2, 
   Clock, 
@@ -101,6 +102,9 @@ export function ReceivingTab({ preSelectedReferral, authSession }) {
   const [isRadioModalOpen, setIsRadioModalOpen] = useState(false);
   const [acceptedIds, setAcceptedIds] = useState(new Set());
   const [prevStatusMap, setPrevStatusMap] = useState({});
+  // Reject reason modal state
+  const [rejectTarget, setRejectTarget] = useState(null); // referral to reject
+  const [rejectedIds, setRejectedIds] = useState(new Set()); // cards to hide after rejection
 
   useEffect(() => {
     if (!referrals) return;
@@ -176,7 +180,9 @@ export function ReceivingTab({ preSelectedReferral, authSession }) {
 
   const realIncoming = referrals.filter(r => 
     (String(r.targetHospitalId) === String(authSession?.hospitalId) || String(r.acceptedHospitalId) === String(authSession?.hospitalId)) &&
-    r.status !== 'COMPLETED'
+    r.status !== 'COMPLETED' &&
+    r.status !== 'REJECTED' &&
+    !rejectedIds.has(r.id)
   );
 
   const incomingList = realIncoming;
@@ -193,27 +199,31 @@ export function ReceivingTab({ preSelectedReferral, authSession }) {
   }, [preSelectedReferral]);
 
 
-  // Handler: Reject Patient Request
-  const handleRejectPatient = async (ref) => {
-    ref.status = 'REJECTED';
-    setAcceptedIds(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(ref.id);
-      return newSet;
-    });
+  // Handler: Open reject reason modal (step 1 — choose reason)
+  const handleOpenRejectModal = (ref) => {
+    setRejectTarget(ref);
+  };
 
+  // Handler: Confirm rejection with reason (step 2 — fires API, removes card)
+  const handleConfirmReject = async (referralId, reason) => {
     try {
-      await apiClient(`/api/referrals/${ref.id}/reject`, {
-        method: 'POST'
+      await apiClient(`/api/referrals/${referralId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
       });
     } catch (err) {
       console.warn('Reject referral API notice:', err);
     }
-    
+
+    // Hide card immediately — optimistic update
+    setRejectedIds(prev => new Set([...prev, referralId]));
+    setRejectTarget(null);
+
     if (setLastNotification) {
       setLastNotification({
         type: 'error',
-        text: `✕ Referral #${ref.patientRefCode} rejected.`
+        text: `✕ Referral rejected. Reason recorded and sending hospital notified.`
       });
     }
   };
@@ -800,7 +810,7 @@ export function ReceivingTab({ preSelectedReferral, authSession }) {
                 {!isAccepted ? (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleRejectPatient(ref)}
+                      onClick={() => handleOpenRejectModal(ref)}
                       className="eleven-button py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl justify-center shadow-xs transition-all flex-1"
                     >
                       ✕ Reject
@@ -827,6 +837,15 @@ export function ReceivingTab({ preSelectedReferral, authSession }) {
           );
         })}
       </div>
+
+      {/* REJECT REASON MODAL */}
+      {rejectTarget && (
+        <RejectReasonModal
+          referral={rejectTarget}
+          onConfirm={handleConfirmReject}
+          onCancel={() => setRejectTarget(null)}
+        />
+      )}
 
       {/* DETAIL REPORT MODAL FROM CARDS VIEW */}
       {detailModalRef && (

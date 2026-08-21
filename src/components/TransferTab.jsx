@@ -1,14 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Search, Check, MapPin, Phone, Building2, Navigation, ShieldCheck, X, 
   ChevronRight, Layers, Maximize2, Compass, MousePointer, Plus, Send, 
-  AlertTriangle, Clock, User, Stethoscope, Activity, FileText, CheckCircle2, Radio, Sparkles
+  AlertTriangle, Clock, User, Stethoscope, Activity, FileText, CheckCircle2, Radio, Sparkles,
+  KeyRound, Copy, Fingerprint
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useWebSocket } from '../context/WebSocketContext';
 import { apiClient } from '../utils/apiClient.js';
+import { PatientRegistrationModal } from './PatientRegistrationModal.jsx';
 
 const MASTER_RESOURCES = [
   { name: 'ICU', category: 'Beds & Care Units' },
@@ -153,7 +155,7 @@ const createUserLocationPinIcon = () => {
 };
 
 export function TransferTab({ authSession }) {
-  const { setLastNotification, hospitals } = useWebSocket() || {};
+  const { setLastNotification, hospitals, referrals } = useWebSocket() || {};
 
   const [hospitalsList, setHospitalsList] = useState([]);
   const [selectedTags, setSelectedTags] = useState(['ICU', 'Ventilator']);
@@ -193,25 +195,14 @@ export function TransferTab({ authSession }) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [detailHospitalModal, setDetailHospitalModal] = useState(null);
 
-  // Active Patient Entry state
+  // Active Patient Entry state (includes patientKey once registered)
   const [activePatient, setActivePatient] = useState(null);
 
   // Modal visibility states
   const [isCreatePatientModalOpen, setIsCreatePatientModalOpen] = useState(false);
   const [sendAlertModalHosp, setSendAlertModalHosp] = useState(null);
   const [alertSentHospitals, setAlertSentHospitals] = useState({}); // { [hospId]: true }
-
-  // Form state for creating patient entry
-  const [newPatientForm, setNewPatientForm] = useState({
-    patientName: '',
-    patientAge: '',
-    patientSex: 'Male',
-    diagnosisSuspected: '',
-    priority: 'CRITICAL',
-    requiredEquipment: ['ICU', 'Ventilator'],
-    referringDoctorName: 'Dr. Ramesh Kumar',
-    timeoutMinutes: 5
-  });
+  const [keyCopied, setKeyCopied] = useState(false);
 
   // Navigation map target state
   const [mapTargetPos, setMapTargetPos] = useState([12.9716, 77.6100]);
@@ -349,54 +340,52 @@ export function TransferTab({ authSession }) {
     setSelectedTags(selectedTags.filter(t => t !== tagToRemove));
   };
 
-  const handleCreatePatientEntrySubmit = (e) => {
-    e.preventDefault();
-    if (!newPatientForm.patientName.trim()) return;
-
+  /**
+   * Called by PatientRegistrationModal onSubmit.
+   * Posts to /api/referrals is done later when a hospital is selected.
+   * Here we just build the activePatient object from the form data,
+   * update selectedTags for the map filter, and return a fake key preview
+   * so the modal can show step 2. The real patient key comes back from the
+   * backend when the referral is actually created in handleConfirmSendAlert.
+   */
+  const handlePatientRegistered = async (formData) => {
     const createdRefCode = `PAT-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const created = {
-      patientName: newPatientForm.patientName.trim(),
-      patientAge: parseInt(newPatientForm.patientAge) || 45,
-      patientSex: newPatientForm.patientSex,
-      diagnosisSuspected: newPatientForm.diagnosisSuspected.trim() || 'Acute Critical Emergency',
-      priority: newPatientForm.priority,
-      requiredEquipment: [...newPatientForm.requiredEquipment],
-      referringDoctorName: newPatientForm.referringDoctorName || 'Dr. Ramesh Kumar',
-      timeoutMinutes: parseInt(newPatientForm.timeoutMinutes) || 5,
-      patientRefCode: createdRefCode
+      patientName:        formData.patientName,
+      patientAge:         formData.patientAge,
+      patientSex:         formData.patientSex,
+      diagnosisSuspected: formData.diagnosisSuspected,
+      priority:           formData.priority,
+      requiredEquipment:  formData.requiredEquipment,
+      referringDoctorName:formData.referringDoctorName,
+      timeoutMinutes:     formData.timeoutMinutes,
+      patientPhone:       formData.patientPhone,
+      phoneOwner:         formData.phoneOwner,
+      vitals:             formData.vitals,
+      patientRefCode:     createdRefCode,
+      patientKey:         null, // will be filled when referral is created
     };
 
     setActivePatient(created);
-    setSelectedTags([...newPatientForm.requiredEquipment]);
-    setIsCreatePatientModalOpen(false);
+    setSelectedTags([...formData.requiredEquipment]);
 
     if (setLastNotification) {
       setLastNotification({
         id: Date.now(),
-        text: `Patient transfer entry created for ${created.patientName} (${created.patientRefCode}). Auto-matched top nearest hospitals!`,
+        text: `Patient entry created for ${created.patientName} (${created.patientRefCode}). Select a hospital to dispatch.`,
         type: 'success'
       });
     }
 
-    // Reset form
-    setNewPatientForm({
-      patientName: '',
-      patientAge: '',
-      patientSex: 'Male',
-      diagnosisSuspected: '',
-      priority: 'CRITICAL',
-      requiredEquipment: ['ICU', 'Ventilator'],
-      referringDoctorName: 'Dr. Ramesh Kumar',
-      timeoutMinutes: 5
-    });
+    // Return null patientKey — the real one arrives from the server on dispatch
+    return { patientKey: null };
   };
 
   const handleConfirmSendAlert = async (hosp) => {
     setAlertSentHospitals(prev => ({ ...prev, [hosp.id]: true }));
     setSendAlertModalHosp(null);
 
-    // Read stored auth session if available (or use props)
     let originHospId = authSession?.hospitalId || 'hosp-a';
 
     try {
@@ -404,19 +393,21 @@ export function TransferTab({ authSession }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          originHospitalId: originHospId,
-          targetHospitalId: hosp.id,
-          requirementSummary: `${activePatient.diagnosisSuspected} — Priority ${activePatient.priority}`,
-          requiredResources: activePatient.requiredEquipment,
-          priority: activePatient.priority,
-          timeoutMinutes: activePatient.timeoutMinutes || 5,
+          originHospitalId:    originHospId,
+          targetHospitalId:    hosp.id,
+          requirementSummary:  `${activePatient.diagnosisSuspected} — Priority ${activePatient.priority}`,
+          requiredResources:   activePatient.requiredEquipment,
+          priority:            activePatient.priority,
+          timeoutMinutes:      activePatient.timeoutMinutes || 5,
           patientData: {
-            patientName: activePatient.patientName,
-            patientAge: activePatient.patientAge,
-            patientSex: activePatient.patientSex,
-            diagnosisSuspected: activePatient.diagnosisSuspected,
+            patientName:         activePatient.patientName,
+            patientAge:          activePatient.patientAge,
+            patientSex:          activePatient.patientSex,
+            diagnosisSuspected:  activePatient.diagnosisSuspected,
             referringDoctorName: activePatient.referringDoctorName,
-            vitals: { bp: '135/85', hr: 104, spo2: 95, rr: 22, temp: '98.6 F', gcs: 14 }
+            patientPhone:        activePatient.patientPhone,
+            phoneOwner:          activePatient.phoneOwner,
+            vitals: activePatient.vitals || { bp: '135/85', hr: 104, spo2: 95, rr: 22, temp: '98.6 F', gcs: 14 }
           }
         })
       });
@@ -424,6 +415,13 @@ export function TransferTab({ authSession }) {
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || 'Failed to dispatch referral to the server.');
+      }
+
+      const referralData = await res.json();
+
+      // Update activePatient with the real patient key returned by the server
+      if (referralData?.patientKey) {
+        setActivePatient(prev => ({ ...prev, patientKey: referralData.patientKey }));
       }
 
       if (setLastNotification) {
@@ -435,6 +433,7 @@ export function TransferTab({ authSession }) {
       }
     } catch (err) {
       console.warn('Post referral API notice:', err);
+      setAlertSentHospitals(prev => ({ ...prev, [hosp.id]: false }));
       if (setLastNotification) {
         setLastNotification({
           id: Date.now(),
@@ -445,17 +444,40 @@ export function TransferTab({ authSession }) {
     }
   };
 
-  const toggleEquipmentInForm = (equipmentName) => {
-    setNewPatientForm(prev => {
-      const exists = prev.requiredEquipment.includes(equipmentName);
-      return {
-        ...prev,
-        requiredEquipment: exists 
-          ? prev.requiredEquipment.filter(e => e !== equipmentName)
-          : [...prev.requiredEquipment, equipmentName]
-      };
+  // ─── copy patient key helper ─────────────────────────────────────────────────
+  const handleCopyPatientKey = () => {
+    if (!activePatient?.patientKey) return;
+    navigator.clipboard.writeText(activePatient.patientKey).then(() => {
+      setKeyCopied(true);
+      setTimeout(() => setKeyCopied(false), 2000);
     });
   };
+
+  // ─── Rejection map: { [hospitalId]: { reason, patientRefCode } } ──────────────
+  // Built from rejected referrals sent by this hospital so the card can show a warning
+  const rejectionMap = useMemo(() => {
+    if (!referrals || !authSession?.hospitalId) return {};
+    const map = {};
+    referrals.forEach(r => {
+      if (
+        r.status === 'REJECTED' &&
+        String(r.originHospitalId) === String(authSession.hospitalId) &&
+        r.targetHospitalId
+      ) {
+        // Store the most recent rejection reason per target hospital
+        const existing = map[r.targetHospitalId];
+        if (!existing || new Date(r.createdAt) > new Date(existing.createdAt)) {
+          map[r.targetHospitalId] = {
+            reason:         r.rejectionReason || 'No reason provided',
+            rejectedByName: r.rejectedByName || r.targetHospitalName || `Hospital #${r.targetHospitalId}`,
+            patientRefCode: r.patientRefCode,
+            createdAt:      r.createdAt,
+          };
+        }
+      }
+    });
+    return map;
+  }, [referrals, authSession?.hospitalId]);
 
   return (
     <div className="min-h-screen space-y-6 font-sans max-w-7xl mx-auto pt-2 pb-32">
@@ -494,36 +516,77 @@ export function TransferTab({ authSession }) {
           </button>
         </div>
       ) : (
-        <div className="bg-gradient-to-r from-[#1c1917] to-[#292524] p-4 rounded-2xl border border-[#292524] text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold shrink-0">
-              <User className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-white">
-                  {activePatient.patientName} ({activePatient.patientAge}y, {activePatient.patientSex})
-                </span>
-                <span className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-bold ${
-                  activePatient.priority === 'CRITICAL' ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-500 text-white'
-                }`}>
-                  {activePatient.priority} PRIORITY
-                </span>
+        <div className="bg-gradient-to-r from-[#1c1917] to-[#292524] p-4 rounded-2xl border border-[#292524] text-white shadow-md space-y-3">
+          {/* Row 1: name + priority */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold shrink-0">
+                <User className="w-5 h-5" />
               </div>
-              <p className="text-xs text-[#a8a29e] mt-0.5 font-medium">
-                Diagnosis: <strong className="text-emerald-300">{activePatient.diagnosisSuspected}</strong>
-              </p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-white">
+                    {activePatient.patientName} ({activePatient.patientAge}y, {activePatient.patientSex})
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-bold ${
+                    activePatient.priority === 'CRITICAL' ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-500 text-white'
+                  }`}>
+                    {activePatient.priority} PRIORITY
+                  </span>
+                </div>
+                <p className="text-xs text-[#a8a29e] mt-0.5 font-medium">
+                  Diagnosis: <strong className="text-emerald-300">{activePatient.diagnosisSuspected}</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 font-mono text-xs">
+              <span className="text-[#a8a29e] text-[11px]">Required:</span>
+              <div className="flex flex-wrap gap-1">
+                {activePatient.requiredEquipment.map((req, idx) => (
+                  <span key={idx} className="px-2 py-0.5 rounded-lg bg-white/10 text-white border border-white/20 text-[11px] font-bold">
+                    {req}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <span className="text-[#a8a29e] text-[11px]">Required:</span>
-            <div className="flex flex-wrap gap-1">
-              {activePatient.requiredEquipment.map((req, idx) => (
-                <span key={idx} className="px-2 py-0.5 rounded-lg bg-white/10 text-white border border-white/20 text-[11px] font-bold">
-                  {req}
-                </span>
-              ))}
+          {/* Row 2: Patient Key + Encryption indicator */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-2 border-t border-white/10">
+            {activePatient.patientKey ? (
+              <>
+                <div className="flex items-center gap-2 bg-emerald-900/40 border border-emerald-700/40 rounded-xl px-3 py-2 flex-1 min-w-0">
+                  <Fingerprint className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[9px] text-emerald-400 font-mono uppercase tracking-wider">Patient Key (HMAC-SHA256)</p>
+                    <p className="font-mono text-[11px] text-emerald-200 font-bold truncate">
+                      {activePatient.patientKey.substring(0, 16)}...{activePatient.patientKey.substring(56)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyPatientKey}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border shrink-0 ${
+                    keyCopied
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+                  }`}
+                >
+                  {keyCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{keyCopied ? 'Copied!' : 'Copy Key'}</span>
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2 text-[11px] text-[#a8a29e]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Patient key will be generated when you dispatch to a hospital</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 shrink-0 bg-emerald-900/30 border border-emerald-800/30 px-2.5 py-1.5 rounded-xl">
+              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              <span className="text-[10px] font-bold text-emerald-300 font-mono">AES-256-GCM</span>
             </div>
           </div>
         </div>
@@ -789,6 +852,11 @@ export function TransferTab({ authSession }) {
                             <Send className="w-3.5 h-3.5" />
                             <span>Send Transfer Alert</span>
                           </button>
+                          {rejectionMap[hosp.id] && (
+                            <p className="text-[10px] text-red-500 text-center mt-1 font-medium">
+                              ⚠ Previously rejected: {rejectionMap[hosp.id].reason}
+                            </p>
+                          )}
                         </div>
                       </Popup>
                     </Marker>
@@ -877,6 +945,24 @@ export function TransferTab({ authSession }) {
                     <p className="text-xs text-[#777169] mt-0.5">{hosp.address}</p>
                   </div>
 
+                  {/* ── Rejection warning: shown when this hospital previously rejected ── */}
+                  {rejectionMap[hosp.id] && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                        <span className="text-[11px] font-bold text-red-700">
+                          Previously rejected (Ref #{rejectionMap[hosp.id].patientRefCode})
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-red-600 leading-relaxed pl-5">
+                        <strong>Reason:</strong> {rejectionMap[hosp.id].reason}
+                      </p>
+                      <p className="text-[10px] text-red-400 pl-5 font-mono">
+                        You can still send — the hospital may have capacity now.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Key Resource Availability Metrics */}
                   <div className="grid grid-cols-3 gap-2 text-xs font-mono">
                     {hosp.resources.slice(0, 3).map((res, rIdx) => (
@@ -893,15 +979,22 @@ export function TransferTab({ authSession }) {
                       onClick={() => handleConfirmSendAlert(hosp)}
                       disabled={isAlertSent}
                       className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
-                        isAlertSent 
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                          : 'bg-emerald-600 hover:bg-emerald-700 text-white hover:scale-[1.01]'
+                        isAlertSent
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : rejectionMap[hosp.id]
+                            ? 'bg-amber-600 hover:bg-amber-700 text-white hover:scale-[1.01]'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white hover:scale-[1.01]'
                       }`}
                     >
                       {isAlertSent ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                           <span>Alert Dispatched ✓</span>
+                        </>
+                      ) : rejectionMap[hosp.id] ? (
+                        <>
+                          <Send className="w-4 h-4" />
+                          <span>Re-send Despite Rejection</span>
                         </>
                       ) : (
                         <>
@@ -927,151 +1020,12 @@ export function TransferTab({ authSession }) {
 
       </div>
 
-      {/* CREATE PATIENT TRANSFER ENTRY MODAL */}
-      {isCreatePatientModalOpen && (
-        <div className="fixed inset-0 z-[9999] bg-[#0c0a09]/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans">
-          <div className="bg-white border border-[#d6d3d1] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="bg-[#1c1917] p-5 text-white flex items-center justify-between border-b border-[#292524]">
-              <div className="flex items-center gap-2.5">
-                <Plus className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-base font-extrabold">Create Emergency Patient Transfer Entry</h2>
-              </div>
-              <button
-                onClick={() => setIsCreatePatientModalOpen(false)}
-                className="text-[#a8a29e] hover:text-white p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreatePatientEntrySubmit} className="p-6 space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-[#0c0a09] mb-1">Patient Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Deepak Sharma"
-                  value={newPatientForm.patientName}
-                  onChange={(e) => setNewPatientForm({ ...newPatientForm, patientName: e.target.value })}
-                  className="w-full p-2.5 bg-[#fafafa] border border-[#d6d3d1] rounded-xl text-sm font-medium focus:outline-none focus:border-[#292524]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#0c0a09] mb-1">Age *</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="e.g. 52"
-                    value={newPatientForm.patientAge}
-                    onChange={(e) => setNewPatientForm({ ...newPatientForm, patientAge: e.target.value })}
-                    className="w-full p-2.5 bg-[#fafafa] border border-[#d6d3d1] rounded-xl text-sm font-medium focus:outline-none focus:border-[#292524]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#0c0a09] mb-1">Sex</label>
-                  <select
-                    value={newPatientForm.patientSex}
-                    onChange={(e) => setNewPatientForm({ ...newPatientForm, patientSex: e.target.value })}
-                    className="w-full p-2.5 bg-[#fafafa] border border-[#d6d3d1] rounded-xl text-sm font-semibold focus:outline-none focus:border-[#292524]"
-                  >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#0c0a09] mb-1">Suspected Condition / Clinical Diagnosis *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Acute Ischemic Stroke / Severe Trauma"
-                  value={newPatientForm.diagnosisSuspected}
-                  onChange={(e) => setNewPatientForm({ ...newPatientForm, diagnosisSuspected: e.target.value })}
-                  className="w-full p-2.5 bg-[#fafafa] border border-[#d6d3d1] rounded-xl text-sm font-medium focus:outline-none focus:border-[#292524]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#0c0a09] mb-1">Transfer Priority</label>
-                <div className="grid grid-cols-3 gap-2 font-mono">
-                  {['CRITICAL', 'URGENT', 'STANDARD'].map(p => (
-                    <button
-                      type="button"
-                      key={p}
-                      onClick={() => setNewPatientForm({ ...newPatientForm, priority: p })}
-                      className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
-                        newPatientForm.priority === p 
-                          ? p === 'CRITICAL' ? 'bg-red-600 text-white border-red-600' : 'bg-amber-500 text-white border-amber-500'
-                          : 'bg-white text-[#777169] border-[#e7e5e4]'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#0c0a09] mb-1">Response Window (Minutes)</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
-                  className="w-full bg-[#fafafa] border border-[#d6d3d1] p-2 rounded-xl text-sm font-bold focus:outline-none focus:border-[#292524] focus:ring-1 focus:ring-[#292524] mb-3"
-                  value={newPatientForm.timeoutMinutes}
-                  onChange={(e) => setNewPatientForm({ ...newPatientForm, timeoutMinutes: e.target.value })}
-                />
-                <p className="text-[10px] text-[#777169] mt-[-8px] mb-4">Time given to receiving hospital before auto-allocation.</p>
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#0c0a09] mb-1">Required Facilities & Equipment</label>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {['ICU', 'Ventilator', 'CT Scan', 'Neurosurgeon', 'Blood Bank', 'Trauma Center', 'Stroke Unit'].map(eq => {
-                    const selected = newPatientForm.requiredEquipment.includes(eq);
-                    return (
-                      <button
-                        type="button"
-                        key={eq}
-                        onClick={() => toggleEquipmentInForm(eq)}
-                        className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1 ${
-                          selected 
-                            ? 'bg-[#292524] text-white border-[#292524]' 
-                            : 'bg-white text-[#292524] border-[#e7e5e4]'
-                        }`}
-                      >
-                        <span>{eq}</span>
-                        {selected && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-[#e7e5e4] flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreatePatientModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-white border border-[#e7e5e4] text-[#292524] font-bold text-xs hover:bg-[#fafafa]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all"
-                >
-                  Save & Match Destination Hospitals
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* ── PatientRegistrationModal (replaces old inline modal) ── */}
+      <PatientRegistrationModal
+        isOpen={isCreatePatientModalOpen}
+        onClose={() => setIsCreatePatientModalOpen(false)}
+        onSubmit={handlePatientRegistered}
+      />
 
       {/* DISPATCH TRANSFER ALERT MODAL */}
       {sendAlertModalHosp && (

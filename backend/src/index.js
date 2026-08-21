@@ -17,11 +17,16 @@ const ioMock = {
     const msg = JSON.stringify({ type, ...payload });
     wss.clients.forEach(client => {
       if (client.readyState === 1 /* WebSocket.OPEN */) {
+        // If the message carries a referral, only send to hospitals involved in it.
+        // Use String() coercion so integer DB IDs and string JWT IDs both match.
         if (payload.referral && client.hospitalId) {
           const ref = payload.referral;
-          if (ref.originHospitalId !== client.hospitalId && ref.targetHospitalId !== client.hospitalId && ref.acceptedHospitalId !== client.hospitalId) {
-             return;
-          }
+          const cid = String(client.hospitalId);
+          const isInvolved =
+            String(ref.originHospitalId)   === cid ||
+            String(ref.targetHospitalId)   === cid ||
+            String(ref.acceptedHospitalId) === cid;
+          if (!isInvolved) return;
         }
         client.send(msg);
       }
@@ -65,6 +70,7 @@ const messagesRoutes = require('./routes/messages');
 app.use('/api/auth', authRoutes);
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/referrals', referralRoutes);
+app.use('/api/patients', referralRoutes); // patient key lookup via /api/patients/:key
 app.use('/api/ambulances', ambulanceRoutes);
 app.use('/demo', demoRoutes);
 app.use('/api/sms', smsRoutes);

@@ -11,6 +11,8 @@ export function WebSocketProvider({ children }) {
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState({}); // { threadId: { userName, userRole } }
   const [lastNotification, setLastNotification] = useState(null);
+  const [lastAcceptedReferral, setLastAcceptedReferral] = useState(null);
+  const [lastRejectedReferral, setLastRejectedReferral] = useState(null);
   const wsRef = useRef(null);
 
   const fetchInitialData = async () => {
@@ -74,14 +76,34 @@ export function WebSocketProvider({ children }) {
               }
               return h;
             }));
-          } else if (['REFERRAL_CREATED', 'REFERRAL_ACCEPTED', 'AMBULANCE_DISPATCHED', 'REFERRAL_COMPLETED', 'REFERRAL_REJECTED'].includes(msg.type)) {
+          } else if (['REFERRAL_CREATED', 'REFERRAL_ACCEPTED', 'AMBULANCE_DISPATCHED', 'REFERRAL_COMPLETED', 'REFERRAL_REJECTED', 'REFERRAL_UPDATED'].includes(msg.type)) {
             setReferrals(prev => {
-              const exists = prev.some(r => r.id === msg.referral.id);
-              return exists 
-                ? prev.map(r => r.id === msg.referral.id ? msg.referral : r)
-                : [msg.referral, ...prev];
+              if (!msg.referral) return prev;
+              const incoming = msg.referral;
+              const exists = prev.some(r => r.id === incoming.id);
+              if (exists) {
+                return prev.map(r => {
+                  if (r.id !== incoming.id) return r;
+                  // Merge: keep existing field values if incoming field is null/undefined
+                  // This ensures originHospitalId/Name etc. are never wiped by a partial update
+                  const merged = { ...r };
+                  Object.entries(incoming).forEach(([k, v]) => {
+                    if (v !== undefined && v !== null) merged[k] = v;
+                    else if (k === 'status' || k === 'rejectionReason') merged[k] = v; // allow null status clears
+                  });
+                  return merged;
+                });
+              }
+              return [incoming, ...prev];
             });
-            if (msg.message) setLastNotification({ id: Date.now(), text: msg.message, type: 'info' });
+            // Surface accepted / rejected events for App-level CTA toasts
+            if (msg.type === 'REFERRAL_ACCEPTED' && msg.referral) {
+              setLastAcceptedReferral({ ...msg.referral, acceptedByName: msg.acceptedByName });
+            }
+            if (msg.type === 'REFERRAL_REJECTED' && msg.referral) {
+              setLastRejectedReferral({ ...msg.referral, rejectionReason: msg.rejectionReason, rejectedByName: msg.rejectedByName });
+            }
+            if (msg.message) setLastNotification({ id: Date.now(), text: msg.message, type: msg.type === 'REFERRAL_REJECTED' ? 'error' : 'info' });
           } else if (msg.type === 'REFERRAL_REROUTING') {
             setReferrals(prev => prev.map(r => r.id === msg.referralId ? msg.referral : r));
             if (msg.message) setLastNotification({ id: Date.now(), text: msg.message, type: 'warning' });
@@ -199,6 +221,10 @@ export function WebSocketProvider({ children }) {
       typingUsers,
       lastNotification,
       setLastNotification,
+      lastAcceptedReferral,
+      setLastAcceptedReferral,
+      lastRejectedReferral,
+      setLastRejectedReferral,
       refreshAll,
       sendChatMessage,
       sendTypingIndicator,

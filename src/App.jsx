@@ -14,7 +14,9 @@ import { FlowTester } from './components/FlowTester';
 import { SMSModal } from './components/SMSModal';
 import { AuthPage } from './components/AuthPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { Bell, X, ShieldCheck } from 'lucide-react';
+import { HospitalProfilePanel } from './components/HospitalProfilePanel';
+import { ReferralStatusDashboard } from './components/ReferralStatusDashboard';
+import { Bell, X, ShieldCheck, AlertCircle, CheckCircle2, Activity } from 'lucide-react';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('receiving');
@@ -40,8 +42,14 @@ function AppContent() {
   const [activePacketModalId, setActivePacketModalId] = useState(null);
   const [decryptedPacketData, setDecryptedPacketData] = useState(null);
   const [loadingPacket, setLoadingPacket] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [statusDashboardRef, setStatusDashboardRef] = useState(null); // referral to show in ReferralStatusDashboard
 
-  const { lastNotification, setLastNotification, hospitals } = useWebSocket();
+  const {
+    lastNotification, setLastNotification, hospitals,
+    lastAcceptedReferral, setLastAcceptedReferral,
+    lastRejectedReferral, setLastRejectedReferral
+  } = useWebSocket();
   const [preSelectedReceivingRef, setPreSelectedReceivingRef] = useState(null);
 
   const handleLogout = () => {
@@ -78,7 +86,94 @@ function AppContent() {
         setActiveTab={setActiveTab}
         authSession={authSession}
         onLogout={handleLogout}
+        onOpenProfile={() => setIsProfileOpen(true)}
       />
+
+      {/* Hospital Profile Panel */}
+      <HospitalProfilePanel
+        authSession={authSession}
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
+
+      {/* ReferralStatusDashboard — opened from acceptance/rejection CTAs */}
+      {statusDashboardRef && (
+        <ReferralStatusDashboard
+          referral={statusDashboardRef}
+          authSession={authSession}
+          onClose={() => setStatusDashboardRef(null)}
+        />
+      )}
+
+      {/* ── Acceptance CTA Toast ── */}
+      {lastAcceptedReferral && String(lastAcceptedReferral.originHospitalId) === String(authSession?.hospitalId) && (
+        <div className="fixed top-4 right-4 z-[9960] max-w-sm w-full animate-in slide-in-from-right duration-300">
+          <div className="bg-white border border-emerald-300 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-emerald-600 px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-white" />
+                <span className="text-xs font-bold text-white">Referral Accepted!</span>
+              </div>
+              <button onClick={() => setLastAcceptedReferral(null)} className="text-emerald-200 hover:text-white p-0.5">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="px-4 py-3 space-y-2.5">
+              <div>
+                <p className="text-xs font-bold text-[#0c0a09]">
+                  {lastAcceptedReferral.acceptedByName || lastAcceptedReferral.targetHospitalName} confirmed your referral
+                </p>
+                <p className="text-[11px] text-[#777169] mt-0.5">
+                  #{lastAcceptedReferral.patientRefCode} · {lastAcceptedReferral.patientData?.diagnosisSuspected || lastAcceptedReferral.requirementSummary}
+                </p>
+              </div>
+              <button
+                onClick={() => { setStatusDashboardRef(lastAcceptedReferral); setLastAcceptedReferral(null); }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                View Live Status Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Rejection CTA Toast ── */}
+      {lastRejectedReferral && String(lastRejectedReferral.originHospitalId) === String(authSession?.hospitalId) && (
+        <div className="fixed top-4 right-4 z-[9960] max-w-sm w-full animate-in slide-in-from-right duration-300">
+          <div className="bg-white border border-red-300 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-red-600 px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-white" />
+                <span className="text-xs font-bold text-white">Referral Rejected</span>
+              </div>
+              <button onClick={() => setLastRejectedReferral(null)} className="text-red-200 hover:text-white p-0.5">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="px-4 py-3 space-y-2.5">
+              <div>
+                <p className="text-xs font-bold text-[#0c0a09]">
+                  {lastRejectedReferral.rejectedByName || lastRejectedReferral.targetHospitalName} rejected your referral
+                </p>
+                {lastRejectedReferral.rejectionReason && (
+                  <p className="text-[11px] text-red-700 mt-0.5 leading-relaxed">
+                    Reason: {lastRejectedReferral.rejectionReason}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => { setStatusDashboardRef(lastRejectedReferral); setLastRejectedReferral(null); }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                View Details &amp; Reroute Options
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Live Toast Notification Banner */}
       {lastNotification && (
