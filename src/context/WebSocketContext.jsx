@@ -25,7 +25,11 @@ export function WebSocketProvider({ children }) {
       ]);
 
       if (hospRes.ok) setHospitals(await hospRes.json());
-      if (refRes.ok) setReferrals(await refRes.json());
+      if (refRes.ok) {
+        const refs = await refRes.json();
+        // Preserve originalTargetHospitalId on all fetched referrals
+        setReferrals(refs.map(r => ({ ...r, originalTargetHospitalId: r.originalTargetHospitalId || r.targetHospitalId })));
+      }
       if (threadsRes.ok) setThreads(await threadsRes.json());
       if (msgRes.ok) setMessages(await msgRes.json());
     } catch (err) {
@@ -94,6 +98,10 @@ export function WebSocketProvider({ children }) {
                   return merged;
                 });
               }
+              // On first creation, preserve the original target so reroutes don't lose it
+              if (incoming.targetHospitalId) {
+                incoming.originalTargetHospitalId = incoming.originalTargetHospitalId || incoming.targetHospitalId;
+              }
               return [incoming, ...prev];
             });
             // Surface accepted / rejected events for App-level CTA toasts
@@ -108,7 +116,12 @@ export function WebSocketProvider({ children }) {
             setReferrals(prev => prev.map(r => r.id === msg.referralId ? msg.referral : r));
             if (msg.message) setLastNotification({ id: Date.now(), text: msg.message, type: 'warning' });
           } else if (msg.type === 'REFERRAL_REROUTED') {
-            setReferrals(prev => prev.map(r => r.id === msg.referralId ? msg.referral : r));
+            setReferrals(prev => prev.map(r => {
+              if (r.id !== msg.referralId) return r;
+              // Preserve originalTargetHospitalId across reroutes
+              const original = r.originalTargetHospitalId || r.targetHospitalId;
+              return { ...msg.referral, originalTargetHospitalId: original };
+            }));
             if (msg.message) setLastNotification({ id: Date.now(), text: msg.message, type: 'success' });
           } else if (msg.type === 'REFERRAL_ESCALATED') {
             setReferrals(prev => prev.map(r => r.id === msg.referralId ? msg.referral : r));

@@ -61,7 +61,13 @@ function MapFlyToController({ targetPos, targetZoom, targetBounds }) {
 }
 
 // Custom Google Maps Location Pin Marker displaying ONLY Hospital Name
-const createGoogleMapsPinIcon = (name, color, isMatch, isTop3) => {
+const createGoogleMapsPinIcon = (name, color, isMatch, isTop3, rejectedInfo) => {
+  const isRejected = !!rejectedInfo;
+  const pinColor = isRejected ? '#dc2626' : color;
+  const borderColor = isRejected ? '#fca5a5' : (isTop3 ? '#10b981' : 'rgba(255,255,255,0.2)');
+  const labelBg = isRejected ? '#991b1b' : '#1c1917';
+  const pinSize = isTop3 ? '42px' : '36px';
+
   return L.divIcon({
     className: 'custom-google-maps-pin',
     html: `
@@ -70,24 +76,26 @@ const createGoogleMapsPinIcon = (name, color, isMatch, isTop3) => {
         display: flex;
         flex-direction: column;
         align-items: center;
-        opacity: ${isMatch ? 1 : 0.35};
-        filter: ${isMatch ? 'none' : 'grayscale(80%)'};
+        opacity: ${isMatch || isRejected ? 1 : 0.35};
+        filter: ${isMatch || isRejected ? 'none' : 'grayscale(80%)'};
         transition: all 0.25s ease;
-        transform: scale(${isMatch ? (isTop3 ? 1.1 : 1) : 0.8});
+        transform: scale(${isRejected ? 1.15 : (isMatch ? (isTop3 ? 1.1 : 1) : 0.8)});
         cursor: pointer;
+        animation: ${isRejected ? 'rejected-pulse 2s ease-in-out infinite' : 'none'};
       ">
+        <style>@keyframes rejected-pulse { 0%,100% { transform: scale(1.15); } 50% { transform: scale(1.22); } }</style>
         <div style="
-          background-color: ${color};
+          background-color: ${pinColor};
           color: white;
-          width: ${isTop3 ? '42px' : '36px'};
-          height: ${isTop3 ? '42px' : '36px'};
+          width: ${pinSize};
+          height: ${pinSize};
           border-radius: 50% 50% 50% 0;
           transform: rotate(-45deg);
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 2px solid white;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+          border: 2.5px solid ${isRejected ? '#fecaca' : 'white'};
+          box-shadow: 0 4px 14px ${isRejected ? 'rgba(220,38,38,0.5)' : 'rgba(0,0,0,0.35)'};
         ">
           <div style="
             transform: rotate(45deg);
@@ -98,11 +106,11 @@ const createGoogleMapsPinIcon = (name, color, isMatch, isTop3) => {
             justify-content: center;
             line-height: 1;
           ">
-            ✚
+            ${isRejected ? '✕' : '✚'}
           </div>
         </div>
         <div style="
-          background: #1c1917;
+          background: ${labelBg};
           color: white;
           font-family: sans-serif;
           font-size: 10px;
@@ -111,13 +119,14 @@ const createGoogleMapsPinIcon = (name, color, isMatch, isTop3) => {
           border-radius: 6px;
           margin-top: 4px;
           white-space: nowrap;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-          border: 1px solid ${isTop3 ? '#10b981' : 'rgba(255,255,255,0.2)'};
-          max-width: 150px;
+          box-shadow: 0 2px 8px ${isRejected ? 'rgba(220,38,38,0.4)' : 'rgba(0,0,0,0.3)'};
+          border: 1px solid ${borderColor};
+          max-width: 160px;
           overflow: hidden;
           text-overflow: ellipsis;
+          ${isRejected ? 'text-decoration: line-through; opacity: 0.9;' : ''}
         ">
-          ${isTop3 ? '⭐ ' : ''}${name}
+          ${isRejected ? '⛔ ALREADY REJECTED' : (isTop3 ? '⭐ ' : '')}${name}
         </div>
       </div>
     `,
@@ -168,7 +177,7 @@ export function TransferTab({ authSession }) {
       const mapped = others.map((h, i) => {
         // Safely map backend resources to frontend expected shape
         const mappedResources = (h.resources || []).map(r => ({
-          name: String(r.resourceType || r.bed_type || r.name || 'Unknown').replace('_', ' '),
+          name: String(r.resourceType || r.type || r.bed_type || r.name || 'Unknown').replace(/_/g, ' '),
           available: r.availableCount !== undefined ? r.availableCount : (r.available || 0),
           total: r.totalCapacity !== undefined ? r.totalCapacity : (r.total || 0),
           category: 'Medical Resource'
@@ -281,17 +290,23 @@ export function TransferTab({ authSession }) {
     : MASTER_RESOURCES;
 
   // Real-time filtering logic
-  const filteredHospitals = hospitalsList.map(h => {
-    const hasAllSelectedTags = selectedTags.length === 0 || selectedTags.every(tag => {
-      const res = h.resources.find(r => r.name.toLowerCase() === tag.toLowerCase());
+  const filteredHospitals = hospitalsList.map(h => {    const hasAllSelectedTags = selectedTags.length === 0 || selectedTags.every(tag => {
+      const tagLower = tag.toLowerCase();
+      const res = h.resources.find(r => {
+        const nameLower = r.name.toLowerCase();
+        return nameLower === tagLower || nameLower.includes(tagLower) || tagLower.includes(nameLower.replace(/_/g, '').replace(/ bed$/, ''));
+      });
       return res && res.available > 0;
     });
 
     const query = searchQuery.toLowerCase().trim();
     const matchesQuery = !query || 
-      h.name.toLowerCase().includes(query) || 
+      h.name.toLowerCase().includes(query) ||
       h.address.toLowerCase().includes(query) ||
-      h.resources.some(r => r.name.toLowerCase().includes(query) && r.available > 0);
+      h.resources.some(r => {
+        const nameLower = r.name.toLowerCase();
+        return (nameLower.includes(query) || query.includes(nameLower.replace(/_/g, '').replace(/ bed$/, ''))) && r.available > 0;
+      });
 
     const isMatch = hasAllSelectedTags && matchesQuery;
     return { ...h, isMatch };
@@ -460,16 +475,20 @@ export function TransferTab({ authSession }) {
     const map = {};
     referrals.forEach(r => {
       if (
-        r.status === 'REJECTED' &&
-        String(r.originHospitalId) === String(authSession.hospitalId) &&
-        r.targetHospitalId
+        (r.status === 'REJECTED' || r.status === 'RE_ROUTED') &&
+        r.rejectionReason &&
+        String(r.originHospitalId) === String(authSession.hospitalId)
       ) {
+        // Use originalTargetHospitalId to track which hospital actually rejected,
+        // even after auto-reroute changed the target
+        const rejectedHospId = r.originalTargetHospitalId || r.targetHospitalId;
+        if (!rejectedHospId) return;
         // Store the most recent rejection reason per target hospital
-        const existing = map[r.targetHospitalId];
+        const existing = map[rejectedHospId];
         if (!existing || new Date(r.createdAt) > new Date(existing.createdAt)) {
-          map[r.targetHospitalId] = {
+          map[rejectedHospId] = {
             reason:         r.rejectionReason || 'No reason provided',
-            rejectedByName: r.rejectedByName || r.targetHospitalName || `Hospital #${r.targetHospitalId}`,
+            rejectedByName: r.rejectedByName || r.targetHospitalName || `Hospital #${rejectedHospId}`,
             patientRefCode: r.patientRefCode,
             createdAt:      r.createdAt,
           };
@@ -804,11 +823,12 @@ export function TransferTab({ authSession }) {
                 {/* Google-Style Hospital Pins */}
                 {filteredHospitals.map(hosp => {
                   const isTop3 = top3HospitalIds.has(hosp.id);
+                  const rejectedInfo = rejectionMap[hosp.id];
                   return (
                     <Marker
                       key={hosp.id}
                       position={[hosp.lat, hosp.lng]}
-                      icon={createGoogleMapsPinIcon(hosp.name, hosp.color, hosp.isMatch, isTop3)}
+                      icon={createGoogleMapsPinIcon(hosp.name, hosp.color, hosp.isMatch, isTop3, rejectedInfo)}
                       eventHandlers={{
                         dblclick: () => setDetailHospitalModal(hosp)
                       }}
@@ -837,11 +857,11 @@ export function TransferTab({ authSession }) {
                           <div className="grid grid-cols-2 gap-2 text-xs font-mono">
                             <div className="bg-emerald-50 border border-emerald-100 p-2 rounded-lg">
                               <span className="text-[10px] text-[#777169] block font-sans">ICU:</span>
-                              <strong className="text-emerald-700">{hosp.resources.find(r=>r.name==='ICU')?.available || 0} Available</strong>
+                              <strong className="text-emerald-700">{hosp.resources.find(r=>r.name.toLowerCase().includes('icu'))?.available || 0} Available</strong>
                             </div>
                             <div className="bg-blue-50 border border-blue-100 p-2 rounded-lg">
                               <span className="text-[10px] text-[#777169] block font-sans">Ventilators:</span>
-                              <strong className="text-blue-700">{hosp.resources.find(r=>r.name==='Ventilator')?.available || 0} Available</strong>
+                              <strong className="text-blue-700">{hosp.resources.find(r=>r.name.toLowerCase().includes('vent'))?.available || 0} Available</strong>
                             </div>
                           </div>
 
@@ -853,9 +873,15 @@ export function TransferTab({ authSession }) {
                             <span>Send Transfer Alert</span>
                           </button>
                           {rejectionMap[hosp.id] && (
-                            <p className="text-[10px] text-red-500 text-center mt-1 font-medium">
-                              ⚠ Previously rejected: {rejectionMap[hosp.id].reason}
-                            </p>
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-2.5 mt-1 space-y-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-bold text-red-700">⛔ ALREADY REJECTED</span>
+                              </div>
+                              <p className="text-[10px] text-red-600 leading-relaxed">
+                                <strong>Reason:</strong> {rejectionMap[hosp.id].reason}
+                              </p>
+                              <p className="text-[9px] text-red-400 font-mono">Ref #{rejectionMap[hosp.id].patientRefCode}</p>
+                            </div>
                           )}
                         </div>
                       </Popup>
@@ -919,7 +945,11 @@ export function TransferTab({ authSession }) {
               return (
                 <div 
                   key={hosp.id}
-                  className="bg-white border border-[#e7e5e4] hover:border-[#292524] p-5 rounded-2xl shadow-xs hover:shadow-md transition-all space-y-4 relative group"
+                  className={`bg-white border hover:border-[#292524] p-5 rounded-2xl shadow-xs hover:shadow-md transition-all space-y-4 relative group ${
+                    rejectionMap[hosp.id] 
+                      ? 'border-red-300 border-l-4 border-l-red-500 bg-red-50/30'
+                      : 'border-[#e7e5e4]'
+                  }`}
                 >
                   {/* Rank Header Row */}
                   <div className="flex items-center justify-between border-b border-[#f0efed] pb-3">
@@ -1109,6 +1139,32 @@ export function TransferTab({ authSession }) {
             </div>
 
             <div className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
+              {rejectionMap[detailHospitalModal.id] && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-red-100 border border-red-300 flex items-center justify-center">
+                      <AlertTriangle className="w-4 h-4 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-extrabold text-red-700">Previously Rejected Transfer</p>
+                      <p className="text-[10px] text-red-500 font-mono">Ref #{rejectionMap[detailHospitalModal.id].patientRefCode}</p>
+                    </div>
+                  </div>
+                  <div className="bg-white border border-red-100 rounded-xl p-3">
+                    <p className="text-[10px] font-bold text-[#777169] uppercase tracking-wider mb-1">Rejection Reason:</p>
+                    <p className="text-xs text-[#0c0a09] font-semibold leading-relaxed">
+                      {rejectionMap[detailHospitalModal.id].reason}
+                    </p>
+                    <p className="text-[10px] text-red-400 mt-1.5 font-mono">
+                      Rejected by: {rejectionMap[detailHospitalModal.id].rejectedByName}
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-red-500 font-medium">
+                    You can still send a new transfer — the hospital may have capacity now.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-3 gap-3 bg-[#fafafa] border border-[#e7e5e4] p-3 rounded-xl font-mono">
                 <div>
                   <span className="text-[#777169] text-[10px] block font-sans">Distance:</span>
