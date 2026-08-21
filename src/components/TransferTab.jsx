@@ -791,7 +791,7 @@ export function TransferTab({ authSession }) {
             </div>
 
             {/* OpenStreetMap Container */}
-            <div className="h-[520px] w-full relative">
+            <div className="h-[520px] w-full relative overflow-hidden">
               <MapContainer
                 center={[12.9716, 77.6100]}
                 zoom={12}

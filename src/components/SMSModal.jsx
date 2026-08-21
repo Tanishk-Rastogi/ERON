@@ -36,7 +36,7 @@ export function SMSModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0c0a09]/60 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+    <div className="fixed inset-0 z-[9999] bg-[#0c0a09]/60 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="eleven-card w-full max-w-lg p-6 bg-white border-[#d6d3d1] space-y-5 shadow-2xl">
         <div className="flex items-center justify-between border-b border-[#e7e5e4] pb-3">
           <div className="flex items-center gap-2">
