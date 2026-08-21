@@ -3,7 +3,7 @@ import {
   Search, Check, MapPin, Phone, Building2, Navigation, ShieldCheck, X, 
   ChevronRight, Layers, Maximize2, Compass, MousePointer, Plus, Send, 
   AlertTriangle, Clock, User, Stethoscope, Activity, FileText, CheckCircle2, Radio, Sparkles,
-  KeyRound, Copy, Fingerprint
+  KeyRound, Copy, Fingerprint, MessageSquareText
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -11,6 +11,7 @@ import 'leaflet/dist/leaflet.css';
 import { useWebSocket } from '../context/WebSocketContext';
 import { apiClient } from '../utils/apiClient.js';
 import { PatientRegistrationModal } from './PatientRegistrationModal.jsx';
+import { SMSModal } from './SMSModal.jsx';
 
 const MASTER_RESOURCES = [
   { name: 'ICU', category: 'Beds & Care Units' },
@@ -218,6 +219,7 @@ export function TransferTab({ authSession }) {
   const [mapTargetZoom, setMapTargetZoom] = useState(12);
   const [mapTargetBounds, setMapTargetBounds] = useState(null);
   const [enableWheelZoom, setEnableWheelZoom] = useState(false);
+  const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
 
   // Device Geolocation state
   const [userLocation, setUserLocation] = useState(null);
@@ -899,25 +901,22 @@ export function TransferTab({ authSession }) {
             <div>
               <h2 className="text-sm font-extrabold text-[#0c0a09] flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-emerald-600" />
-                <span>Top 3 Shortest Distance Hospitals</span>
+                <span>Top Results</span>
               </h2>
-              <p className="text-[11px] text-[#777169] mt-0.5 group relative cursor-help w-max">
-                <span className="border-b border-dashed border-[#a8a29e] hover:text-[#0c0a09]">
-                  AI Ranking Basis: Proximity (ETA), Resource Headroom & Specialist Availability
-                </span>
-                <span className="absolute left-0 top-full mt-1 hidden group-hover:block bg-[#1c1917] text-white text-[10px] p-2.5 rounded-md w-72 z-50 font-mono shadow-xl leading-relaxed">
-                  <strong className="text-emerald-400">Algorithmic Match Criteria:</strong><br/>
-                  • <strong>40%</strong> Capability Match (Required vs Available)<br/>
-                  • <strong>35%</strong> Shortest Drive ETA (GPS + Traffic)<br/>
-                  • <strong>15%</strong> Capacity Headroom (Load balancing)<br/>
-                  • <strong>10%</strong> Specialist On-Call Status
-                </span>
-              </p>
             </div>
 
-            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-mono font-bold rounded-xl">
-              SORTED BY PROXIMITY
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-mono font-bold rounded-xl">
+                SORTED BY PROXIMITY
+              </span>
+              <button
+                onClick={() => setIsSmsModalOpen(true)}
+                className="px-3 py-1.5 bg-[#292524] hover:bg-black text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+              >
+                <MessageSquareText className="w-3.5 h-3.5" />
+                <span>Send SMS</span>
+              </button>
+            </div>
           </div>
 
           {top3Hospitals.length === 0 ? (
@@ -1201,6 +1200,12 @@ export function TransferTab({ authSession }) {
           </div>
         </div>
       )}
+
+      {/* SMS Short-Code 1923 Sandbox Modal */}
+      <SMSModal 
+        isOpen={isSmsModalOpen} 
+        onClose={() => setIsSmsModalOpen(false)} 
+      />
 
     </div>
   );

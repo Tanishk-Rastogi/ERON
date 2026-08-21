@@ -144,6 +144,14 @@ async function initDb() {
       salt VARCHAR(32),
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE sms_fallback_log (
+      id SERIAL PRIMARY KEY,
+      raw_sms TEXT NOT NULL,
+      parsed_requirement TEXT,
+      response_sent TEXT,
+      timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 }
 
