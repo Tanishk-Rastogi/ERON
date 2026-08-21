@@ -11,7 +11,7 @@ export function LiveAmbulanceTrackingMap3D({ referral, onOpenRadioModal, originH
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   
-  let rawOriginPos = [originHospital?.location_lng || 77.5946, originHospital?.location_lat || 12.9716];
+  let rawOriginPos = [originHospital?.location_lng || 77.2090, originHospital?.location_lat || 28.6139];
   let rawTargetPos = [targetHospital?.location_lng || 77.6245, targetHospital?.location_lat || 12.9352];
 
   // If coordinates are identical or missing, artificially offset them so the simulation route works

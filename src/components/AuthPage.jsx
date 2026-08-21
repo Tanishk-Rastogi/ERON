@@ -8,7 +8,7 @@ export function AuthPage({ onLoginSuccess }) {
   
   // Real-time Address Autocomplete & GPS state
   const [address, setAddress] = useState('');
-  const [coords, setCoords] = useState({ lat: 12.9716, lng: 77.5946 });
+  const [coords, setCoords] = useState({ lat: 28.6139, lng: 77.2090 });
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [showAddressDropdown, setShowAddressDropdown] = useState(false);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);

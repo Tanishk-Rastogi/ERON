@@ -20,7 +20,7 @@ router.post('/login', async (req, res) => {
       const newHospRes = await query(`
         INSERT INTO hospitals (name, location_lat, location_lng, contact_info, tier, capabilities)
         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
-      `, [trimmedName, lat || 12.9716, lng || 77.5946, '+91-98765-00999', 1, ['NEUROSURGERY', 'CT_SCAN']]);
+      `, [trimmedName, lat || 28.6139, lng || 77.2090, '+91-98765-00999', 1, ['NEUROSURGERY', 'CT_SCAN']]);
       
       hosp = newHospRes.rows[0];
 

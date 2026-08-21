@@ -452,7 +452,7 @@ export function ReceivingTab({ preSelectedReferral, authSession }) {
             </div>
           ) : trackingReferral ? (
             <LiveAmbulanceMap 
-              source={{ name: originName, lat: originHosp?.location_lat || 12.9716, lng: originHosp?.location_lng || 77.5946 }}
+              source={{ name: originName, lat: originHosp?.location_lat || 28.6139, lng: originHosp?.location_lng || 77.2090 }}
               destination={{ name: targetName, lat: targetHosp?.location_lat || 12.9352, lng: targetHosp?.location_lng || 77.6245 }}
               onMetricsUpdate={setLiveMetrics}
               onComplete={() => {

@@ -188,7 +188,7 @@ export function TransferTab({ authSession }) {
           id: h.id, // REAL DB INTEGER ID
           name: h.name,
           address: h.contactInfo || 'Mapped Location',
-          lat: h.locationLat || 12.97 + (Math.random() * 0.05),
+          lat: h.locationLat || 28.61 + (Math.random() * 0.05),
           lng: h.locationLng || 77.59 + (Math.random() * 0.05),
           distanceKm: (2.5 + i).toFixed(1),
           etaMins: (8 + i * 2).toString(),
@@ -215,7 +215,7 @@ export function TransferTab({ authSession }) {
   const [keyCopied, setKeyCopied] = useState(false);
 
   // Navigation map target state
-  const [mapTargetPos, setMapTargetPos] = useState([12.9716, 77.6100]);
+  const [mapTargetPos, setMapTargetPos] = useState([28.6139, 77.2090]);
   const [mapTargetZoom, setMapTargetZoom] = useState(12);
   const [mapTargetBounds, setMapTargetBounds] = useState(null);
   const [enableWheelZoom, setEnableWheelZoom] = useState(false);
@@ -793,7 +793,7 @@ export function TransferTab({ authSession }) {
             {/* OpenStreetMap Container */}
             <div className="h-[520px] w-full relative overflow-hidden">
               <MapContainer
-                center={[12.9716, 77.6100]}
+                center={[28.6139, 77.2090]}
                 zoom={12}
                 scrollWheelZoom={enableWheelZoom}
                 style={{ height: '100%', width: '100%' }}
